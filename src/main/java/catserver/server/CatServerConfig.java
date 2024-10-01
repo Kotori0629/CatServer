@@ -21,6 +21,7 @@ public class CatServerConfig {
     public boolean forceSaveOnWatchdog = true;
     public int maxEntityCollision = 8;
     public boolean saveBukkitWorldDimensionId = true;
+    public int maxStackSize = 64;
 
     public List<String> fakePlayerPermissions = Lists.<String>newArrayList("essentials.build");
     public boolean fakePlayerEventPass = false;
@@ -68,6 +69,7 @@ public class CatServerConfig {
         // disableHopperMoveEventWorlds = getOrWriteStringListConfig("plugin.disableHopperMoveEventWorlds", disableHopperMoveEventWorlds); // TODO
         // defaultInstallPluginSpark = getOrWriteBooleanConfig("plugin.defaultInstall.spark", defaultInstallPluginSpark); // TODO
         // general
+        maxStackSize = getOrWriteIntConfig("general.maxStackSize", maxStackSize);
         disableFMLStatusModInfo = getOrWriteBooleanConfig("disableFMLStatusModInfo", disableFMLStatusModInfo);
         disableAsyncCatchWarn = getOrWriteBooleanConfig("disableAsyncCatchWarn", disableAsyncCatchWarn);
         versionCheck = getOrWriteBooleanConfig("versionCheck", versionCheck);

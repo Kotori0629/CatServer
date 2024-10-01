@@ -19,7 +19,7 @@
  import java.awt.image.BufferedImage;
  import java.io.File;
  import java.io.IOException;
-@@ -37,19 +_,53 @@
+@@ -37,19 +_,54 @@
  import java.util.Date;
  import java.util.List;
  import java.util.Map;
@@ -33,6 +33,7 @@
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicReference;
++import java.util.concurrent.locks.LockSupport;
  import java.util.function.BooleanSupplier;
  import java.util.function.Function;
 +
@@ -509,12 +510,11 @@
           }
  
        }
-@@ -678,8 +_,16 @@
+@@ -678,17 +_,39 @@
     }
  
     private boolean haveTime() {
 -      return this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
--   }
 +      // CraftBukkit start
 +      return this.forceTicks || this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
 +   }
@@ -525,12 +525,30 @@
 +      java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
 +   }
 +   // CraftBukkit end
++
++   // CatServer start
++   private boolean waitingForNextTick = false;
++
++   @Override
++   public void waitForTasks() {
++      Thread.yield();
++      long ms = waitingForNextTick ? (this.nextTickTime - Util.getMillis()) * 1_000_000L : 100000L;
++      LockSupport.parkNanos("waiting for tasks", ms);
+    }
  
     protected void waitUntilNextTick() {
        this.runAllTasks();
-@@ -688,7 +_,7 @@
-       });
+-      this.managedBlock(() -> {
+-         return !this.haveTime();
+-      });
++      this.waitingForNextTick = true;
++      try {
++         this.managedBlock(() -> !this.haveTime());
++      } finally {
++         this.waitingForNextTick = false;
++      }
     }
++   // CatServer end
  
 -   protected TickDelayedTask wrapRunnable(Runnable p_212875_1_) {
 +   public TickDelayedTask wrapRunnable(Runnable p_212875_1_) {

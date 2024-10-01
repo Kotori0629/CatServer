@@ -8,7 +8,7 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryView;
  
  public class ShulkerBoxContainer extends Container {
-    private final IInventory field_190899_a;
+    private final IInventory container;
  
 +   // CraftBukkit start
 +   private CraftInventoryView bukkitEntity;
@@ -19,7 +19,7 @@
 +      if (bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      bukkitEntity = new CraftInventoryView(this.player.field_70458_d.getBukkitEntity(), new CraftInventory(this.field_190899_a), this);
++      bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), new CraftInventory(this.container), this);
 +      return bukkitEntity;
 +   }
 +   // CraftBukkit end
@@ -29,9 +29,9 @@
     }
 @@ -16,6 +_,7 @@
     public ShulkerBoxContainer(int p_i50066_1_, PlayerInventory p_i50066_2_, IInventory p_i50066_3_) {
-       super(ContainerType.field_221526_t, p_i50066_1_);
-       func_216962_a(p_i50066_3_, 27);
+       super(ContainerType.SHULKER_BOX, p_i50066_1_);
+       checkContainerSize(p_i50066_3_, 27);
 +      this.player = p_i50066_2_; // CraftBukkit - save player
-       this.field_190899_a = p_i50066_3_;
-       p_i50066_3_.func_174889_b(p_i50066_2_.field_70458_d);
+       this.container = p_i50066_3_;
+       p_i50066_3_.startOpen(p_i50066_2_.player);
        int i = 3;

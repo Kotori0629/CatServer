@@ -10,19 +10,19 @@
        Date date;
        try {
 @@ -70,4 +_,23 @@
-       p_152641_1_.addProperty("expires", this.field_73692_f == null ? "forever" : field_73698_a.format(this.field_73692_f));
-       p_152641_1_.addProperty("reason", this.field_73693_g);
+       p_152641_1_.addProperty("expires", this.expires == null ? "forever" : DATE_FORMAT.format(this.expires));
+       p_152641_1_.addProperty("reason", this.reason);
     }
 +
 +   // CraftBukkit start
 +   public Date getCreated() {
-+      return this.field_73694_d;
++      return this.created;
 +   }
 +
 +   private static <T> T checkExpiry(final T object, final JsonObject jsonobject) {
 +      Date expires = null;
 +      try {
-+         expires = (jsonobject.has("expires") ? BanEntry.field_73698_a.parse(jsonobject.get("expires").getAsString()) : null);
++         expires = (jsonobject.has("expires") ? BanEntry.DATE_FORMAT.parse(jsonobject.get("expires").getAsString()) : null);
 +      } catch (ParseException ex) {
 +      }
 +      if (expires == null || expires.after(new Date())) {

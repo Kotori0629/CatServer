@@ -8,31 +8,31 @@
 +import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
  
  public abstract class AbstractRaiderEntity extends PatrollerEntity {
-    protected static final DataParameter<Boolean> field_213666_c = EntityDataManager.func_187226_a(AbstractRaiderEntity.class, DataSerializers.field_187198_h);
+    protected static final DataParameter<Boolean> IS_CELEBRATING = EntityDataManager.defineId(AbstractRaiderEntity.class, DataSerializers.BOOLEAN);
 @@ -151,7 +_,7 @@
-                i = MathHelper.func_76125_a(i, 0, 4);
-                EffectInstance effectinstance = new EffectInstance(Effects.field_220309_E, 120000, i, false, false, true);
-                if (!this.field_70170_p.func_82736_K().func_223586_b(GameRules.field_223621_x)) {
--                  playerentity.func_195064_c(effectinstance);
+                i = MathHelper.clamp(i, 0, 4);
+                EffectInstance effectinstance = new EffectInstance(Effects.BAD_OMEN, 120000, i, false, false, true);
+                if (!this.level.getGameRules().getBoolean(GameRules.RULE_DISABLE_RAIDS)) {
+-                  playerentity.addEffect(effectinstance);
 +                  playerentity.addEffect(effectinstance, Cause.PATROL_CAPTAIN); // CraftBukkit
                 }
              }
           }
 @@ -335,7 +_,7 @@
-          this.field_220853_c.func_70661_as().func_75499_g();
+          this.mob.getNavigation().stop();
  
-          for(AbstractRaiderEntity abstractraiderentity : this.field_220853_c.field_70170_p.func_217374_a(AbstractRaiderEntity.class, this.field_220851_a, this.field_220853_c, this.field_220853_c.func_174813_aQ().func_72314_b(8.0D, 8.0D, 8.0D))) {
--            abstractraiderentity.func_70624_b(this.field_220853_c.func_70638_az());
-+            abstractraiderentity.setGoalTarget(this.field_220853_c.func_70638_az(), TargetReason.FOLLOW_LEADER, true); // CraftBukkit
+          for(AbstractRaiderEntity abstractraiderentity : this.mob.level.getNearbyEntities(AbstractRaiderEntity.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0D, 8.0D, 8.0D))) {
+-            abstractraiderentity.setTarget(this.mob.getTarget());
++            abstractraiderentity.setGoalTarget(this.mob.getTarget(), TargetReason.FOLLOW_LEADER, true); // CraftBukkit
           }
  
        }
 @@ -345,7 +_,7 @@
-          LivingEntity livingentity = this.field_220853_c.func_70638_az();
+          LivingEntity livingentity = this.mob.getTarget();
           if (livingentity != null) {
-             for(AbstractRaiderEntity abstractraiderentity : this.field_220853_c.field_70170_p.func_217374_a(AbstractRaiderEntity.class, this.field_220851_a, this.field_220853_c, this.field_220853_c.func_174813_aQ().func_72314_b(8.0D, 8.0D, 8.0D))) {
--               abstractraiderentity.func_70624_b(livingentity);
+             for(AbstractRaiderEntity abstractraiderentity : this.mob.level.getNearbyEntities(AbstractRaiderEntity.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0D, 8.0D, 8.0D))) {
+-               abstractraiderentity.setTarget(livingentity);
 +               abstractraiderentity.setGoalTarget(livingentity, TargetReason.FOLLOW_LEADER, true); // CraftBukkit
-                abstractraiderentity.func_213395_q(true);
+                abstractraiderentity.setAggressive(true);
              }
  

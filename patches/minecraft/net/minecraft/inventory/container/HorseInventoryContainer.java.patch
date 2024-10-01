@@ -7,8 +7,8 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryView;
  
  public class HorseInventoryContainer extends Container {
-    private final IInventory field_111243_a;
-    private final AbstractHorseEntity field_111242_f;
+    private final IInventory horseContainer;
+    private final AbstractHorseEntity horse;
  
 +   // CraftBukkit start
 +   CraftInventoryView bukkitEntity;
@@ -19,25 +19,25 @@
 +      if (bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      return bukkitEntity = new CraftInventoryView(player.field_70458_d.getBukkitEntity(), field_111243_a.getOwner().getInventory(), this);
++      return bukkitEntity = new CraftInventoryView(player.player.getBukkitEntity(), horseContainer.getOwner().getInventory(), this);
 +   }
 +   // CraftBukkit stop
 +
 +
     public HorseInventoryContainer(int p_i50077_1_, PlayerInventory p_i50077_2_, IInventory p_i50077_3_, final AbstractHorseEntity p_i50077_4_) {
        super((ContainerType<?>)null, p_i50077_1_);
-       this.field_111243_a = p_i50077_3_;
-       this.field_111242_f = p_i50077_4_;
+       this.horseContainer = p_i50077_3_;
+       this.horse = p_i50077_4_;
 +      player = p_i50077_2_; // Craftbukkit
        int i = 3;
-       p_i50077_3_.func_174889_b(p_i50077_2_.field_70458_d);
+       p_i50077_3_.startOpen(p_i50077_2_.player);
        int j = -18;
 @@ -66,7 +_,7 @@
     }
  
-    public boolean func_75145_c(PlayerEntity p_75145_1_) {
--      return this.field_111243_a.func_70300_a(p_75145_1_) && this.field_111242_f.func_70089_S() && this.field_111242_f.func_70032_d(p_75145_1_) < 8.0F;
-+      return this.field_111243_a.func_70300_a(p_75145_1_) && (this.field_111242_f.func_70089_S() && this.field_111242_f.valid) && this.field_111242_f.func_70032_d(p_75145_1_) < 8.0F; // Paper - Fix MC-161754
+    public boolean stillValid(PlayerEntity p_75145_1_) {
+-      return this.horseContainer.stillValid(p_75145_1_) && this.horse.isAlive() && this.horse.distanceTo(p_75145_1_) < 8.0F;
++      return this.horseContainer.stillValid(p_75145_1_) && (this.horse.isAlive() && this.horse.valid) && this.horse.distanceTo(p_75145_1_) < 8.0F; // Paper - Fix MC-161754
     }
  
-    public ItemStack func_82846_b(PlayerEntity p_82846_1_, int p_82846_2_) {
+    public ItemStack quickMoveStack(PlayerEntity p_82846_1_, int p_82846_2_) {

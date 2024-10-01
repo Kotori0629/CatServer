@@ -10,12 +10,12 @@
  import net.minecraft.world.gen.settings.DimensionGeneratorSettings;
 @@ -65,4 +_,10 @@
           });
-       }).findFirst(), StructureStart.field_214630_a);
+       }).findFirst(), StructureStart.INVALID_START);
     }
 +
 +   // Spigot start
 +   public World getWorld() {
-+      return this.field_235003_a_.getMinecraftWorld();
++      return this.level.getMinecraftWorld();
 +   }
 +   // Spigot end
  }

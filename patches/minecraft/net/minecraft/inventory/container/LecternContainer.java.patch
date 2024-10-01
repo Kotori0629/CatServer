@@ -23,22 +23,22 @@
  public class LecternContainer extends Container {
 +   private CraftInventoryView bukkitEntity = null; // CraftBukkit
 +   private Player player; // CraftBukkit
-    private final IInventory field_217018_c;
-    private final IIntArray field_217019_d;
+    private final IInventory lectern;
+    private final IIntArray lecternData;
  
 -   public LecternContainer(int p_i50075_1_) {
 -      this(p_i50075_1_, new Inventory(1), new IntArray(1));
 -   }
 -
 -   public LecternContainer(int p_i50076_1_, IInventory p_i50076_2_, IIntArray p_i50076_3_) {
--      super(ContainerType.field_221523_q, p_i50076_1_);
+-      super(ContainerType.LECTERN, p_i50076_1_);
 +   // CraftBukkit start
 +   @Override
 +   public CraftInventoryView getBukkitView() {
 +      if (this.bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      CraftInventoryLectern inventory = new CraftInventoryLectern(this.field_217018_c);
++      CraftInventoryLectern inventory = new CraftInventoryLectern(this.lectern);
 +      bukkitEntity = new CraftInventoryView(this.player, inventory, this);
 +      return bukkitEntity;
 +   }
@@ -50,28 +50,28 @@
 +
 +   public LecternContainer(int id, IInventory p_i50076_2_, IIntArray p_i50076_3_, PlayerInventory playerinventory) {
 +      // CraftBukkit end
-+      super(ContainerType.field_221523_q, id);
-       func_216962_a(p_i50076_2_, 1);
-       func_216959_a(p_i50076_3_, 1);
-       this.field_217018_c = p_i50076_2_;
++      super(ContainerType.LECTERN, id);
+       checkContainerSize(p_i50076_2_, 1);
+       checkContainerDataCount(p_i50076_3_, 1);
+       this.lectern = p_i50076_2_;
 @@ -30,9 +_,12 @@
           }
        });
-       this.func_216961_a(p_i50076_3_);
-+      this.player = (Player) playerinventory.field_70458_d.getBukkitEntity(); // CraftBukkit
+       this.addDataSlots(p_i50076_3_);
++      this.player = (Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
     }
  
-    public boolean func_75140_a(PlayerEntity p_75140_1_, int p_75140_2_) {
+    public boolean clickMenuButton(PlayerEntity p_75140_1_, int p_75140_2_) {
 +      PlayerLecternPageChangeEvent paper_event;
 +      CraftInventoryLectern bukkitLectern;
        if (p_75140_2_ >= 100) {
           int k = p_75140_2_ - 100;
-          this.func_75137_b(0, k);
+          this.setData(0, k);
 @@ -41,17 +_,57 @@
           switch(p_75140_2_) {
           case 1:
-             int j = this.field_217019_d.func_221476_a(0);
--            this.func_75137_b(0, j - 1);
+             int j = this.lecternData.get(0);
+-            this.setData(0, j - 1);
 +            //this.setData(0, j - 1);
 +            // Paper start
 +            bukkitLectern = (CraftInventoryLectern) getBukkitView().getTopInventory();
@@ -87,12 +87,12 @@
 +            if (paper_event.isCancelled()) {
 +               return false;
 +            }
-+            this.func_75137_b(0, paper_event.getNewPage());
++            this.setData(0, paper_event.getNewPage());
 +            // Paper end
              return true;
           case 2:
-             int i = this.field_217019_d.func_221476_a(0);
--            this.func_75137_b(0, i + 1);
+             int i = this.lecternData.get(0);
+-            this.setData(0, i + 1);
 +            //this.setData(0, i + 1);
 +            // Paper start
 +            bukkitLectern = (CraftInventoryLectern) getBukkitView().getTopInventory();
@@ -108,11 +108,11 @@
 +            if (paper_event.isCancelled()) {
 +               return false;
 +            }
-+            this.func_75137_b(0, paper_event.getNewPage());
++            this.setData(0, paper_event.getNewPage());
 +            // Paper end
              return true;
           case 3:
-             if (!p_75140_1_.func_175142_cm()) {
+             if (!p_75140_1_.mayBuild()) {
                 return false;
              }
  
@@ -124,15 +124,15 @@
 +            }
 +            // CraftBukkit end
 +
-             ItemStack itemstack = this.field_217018_c.func_70304_b(0);
-             this.field_217018_c.func_70296_d();
-             if (!p_75140_1_.field_71071_by.func_70441_a(itemstack)) {
+             ItemStack itemstack = this.lectern.removeItemNoUpdate(0);
+             this.lectern.setChanged();
+             if (!p_75140_1_.inventory.add(itemstack)) {
 @@ -71,6 +_,8 @@
     }
  
-    public boolean func_75145_c(PlayerEntity p_75145_1_) {
-+      if (field_217018_c instanceof LecternTileEntity.LecternInventory && !((LecternTileEntity.LecternInventory) field_217018_c).getLectern().func_214046_f()) return false; // CraftBukkit
+    public boolean stillValid(PlayerEntity p_75145_1_) {
++      if (lectern instanceof LecternTileEntity.LecternInventory && !((LecternTileEntity.LecternInventory) lectern).getLectern().hasBook()) return false; // CraftBukkit
 +      if (!this.checkReachable) return true; // CraftBukkit
-       return this.field_217018_c.func_70300_a(p_75145_1_);
+       return this.lectern.stillValid(p_75145_1_);
     }
  

@@ -8,4 +8,4 @@
 +
  @OnlyIn(Dist.CLIENT)
  public class ViewFrustum {
-    protected final WorldRenderer field_178169_a;
+    protected final WorldRenderer levelRenderer;

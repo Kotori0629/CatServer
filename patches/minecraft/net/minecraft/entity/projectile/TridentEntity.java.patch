@@ -7,19 +7,19 @@
 +import org.bukkit.event.weather.LightningStrikeEvent.Cause;
  
  public class TridentEntity extends AbstractArrowEntity {
-    private static final DataParameter<Byte> field_203053_g = EntityDataManager.func_187226_a(TridentEntity.class, DataSerializers.field_187191_a);
-    private static final DataParameter<Boolean> field_226571_aq_ = EntityDataManager.func_187226_a(TridentEntity.class, DataSerializers.field_187198_h);
--   private ItemStack field_203054_h = new ItemStack(Items.field_203184_eO);
-+   public ItemStack field_203054_h = new ItemStack(Items.field_203184_eO);
-    private boolean field_203051_au;
-    public int field_203052_f;
+    private static final DataParameter<Byte> ID_LOYALTY = EntityDataManager.defineId(TridentEntity.class, DataSerializers.BYTE);
+    private static final DataParameter<Boolean> ID_FOIL = EntityDataManager.defineId(TridentEntity.class, DataSerializers.BOOLEAN);
+-   private ItemStack tridentItem = new ItemStack(Items.TRIDENT);
++   public ItemStack tridentItem = new ItemStack(Items.TRIDENT);
+    private boolean dealtDamage;
+    public int clientSideReturnTridentTickCount;
  
 @@ -148,7 +_,7 @@
-             LightningBoltEntity lightningboltentity = EntityType.field_200728_aG.func_200721_a(this.field_70170_p);
-             lightningboltentity.func_233576_c_(Vector3d.func_237492_c_(blockpos));
-             lightningboltentity.func_204809_d(entity1 instanceof ServerPlayerEntity ? (ServerPlayerEntity)entity1 : null);
--            this.field_70170_p.func_217376_c(lightningboltentity);
-+            ((ServerWorld)this.field_70170_p).strikeLightning(lightningboltentity, Cause.TRIDENT); // CraftBukkit
-             soundevent = SoundEvents.field_203275_iq;
+             LightningBoltEntity lightningboltentity = EntityType.LIGHTNING_BOLT.create(this.level);
+             lightningboltentity.moveTo(Vector3d.atBottomCenterOf(blockpos));
+             lightningboltentity.setCause(entity1 instanceof ServerPlayerEntity ? (ServerPlayerEntity)entity1 : null);
+-            this.level.addFreshEntity(lightningboltentity);
++            ((ServerWorld)this.level).strikeLightning(lightningboltentity, Cause.TRIDENT); // CraftBukkit
+             soundevent = SoundEvents.TRIDENT_THUNDER;
              f1 = 5.0F;
           }

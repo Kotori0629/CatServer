@@ -7,25 +7,25 @@
 +import org.bukkit.command.CommandSender;
  
  public class RConConsoleSource implements ICommandSource {
-    private static final StringTextComponent field_232647_b_ = new StringTextComponent("Rcon");
+    private static final StringTextComponent RCON_COMPONENT = new StringTextComponent("Rcon");
 @@ -33,8 +_,19 @@
-       return new CommandSource(this, Vector3d.func_237491_b_(serverworld.func_241135_u_()), Vector2f.field_189974_a, serverworld, 4, "Rcon", field_232647_b_, this.field_184171_b, (Entity)null);
+       return new CommandSource(this, Vector3d.atLowerCornerOf(serverworld.getSharedSpawnPos()), Vector2f.ZERO, serverworld, 4, "Rcon", RCON_COMPONENT, this.server, (Entity)null);
     }
  
 +   // CraftBukkit start - Send a String
 +   public void sendMessage(String message) {
-+      this.field_70009_b.append(message);
++      this.buffer.append(message);
 +   }
 +
 +   @Override
 +   public CommandSender getBukkitSender(CommandSource p0) {
-+      return field_184171_b.remoteConsole;
++      return server.remoteConsole;
 +   }
 +   // CraftBukkit end
 +
-    public void func_145747_a(ITextComponent p_145747_1_, UUID p_145747_2_) {
--      this.field_70009_b.append(p_145747_1_.getString());
-+      this.field_70009_b.append(p_145747_1_.getString()).append("\n"); // FIX MC-7569 - RCON has no newlines in multiline output
+    public void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_) {
+-      this.buffer.append(p_145747_1_.getString());
++      this.buffer.append(p_145747_1_.getString()).append("\n"); // FIX MC-7569 - RCON has no newlines in multiline output
     }
  
-    public boolean func_195039_a() {
+    public boolean acceptsSuccess() {

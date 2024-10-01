@@ -20,46 +20,46 @@
 +import org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory;
  
  public abstract class AbstractSkeletonEntity extends MonsterEntity implements IRangedAttackMob {
-    private final RangedBowAttackGoal<AbstractSkeletonEntity> field_85037_d = new RangedBowAttackGoal<>(this, 1.0D, 20, 15.0F);
+    private final RangedBowAttackGoal<AbstractSkeletonEntity> bowGoal = new RangedBowAttackGoal<>(this, 1.0D, 20, 15.0F);
 @@ -154,7 +_,7 @@
-       if (this.field_70170_p != null && !this.field_70170_p.field_72995_K) {
-          this.field_70714_bg.func_85156_a(this.field_85038_e);
-          this.field_70714_bg.func_85156_a(this.field_85037_d);
--         ItemStack itemstack = this.func_184586_b(ProjectileHelper.func_221274_a(this, Items.field_151031_f));
-+         ItemStack itemstack = this.func_184586_b(ProjectileHelper.getWeaponHoldingHand(this, item -> item instanceof net.minecraft.item.BowItem));
-          if (itemstack.func_77973_b() == Items.field_151031_f) {
+       if (this.level != null && !this.level.isClientSide) {
+          this.goalSelector.removeGoal(this.meleeGoal);
+          this.goalSelector.removeGoal(this.bowGoal);
+-         ItemStack itemstack = this.getItemInHand(ProjectileHelper.getWeaponHoldingHand(this, Items.BOW));
++         ItemStack itemstack = this.getItemInHand(ProjectileHelper.getWeaponHoldingHand(this, item -> item instanceof net.minecraft.item.BowItem));
+          if (itemstack.getItem() == Items.BOW) {
              int i = 20;
-             if (this.field_70170_p.func_175659_aa() != Difficulty.HARD) {
+             if (this.level.getDifficulty() != Difficulty.HARD) {
 @@ -171,15 +_,28 @@
     }
  
-    public void func_82196_d(LivingEntity p_82196_1_, float p_82196_2_) {
--      ItemStack itemstack = this.func_213356_f(this.func_184586_b(ProjectileHelper.func_221274_a(this, Items.field_151031_f)));
-+      ItemStack itemstack = this.func_213356_f(this.func_184586_b(ProjectileHelper.getWeaponHoldingHand(this, item -> item instanceof BowItem)));
-       AbstractArrowEntity abstractarrowentity = this.func_213624_b(itemstack, p_82196_2_);
-+      if (this.func_184614_ca().func_77973_b() == Items.field_151031_f) {
-+         abstractarrowentity = ((net.minecraft.item.BowItem) this.func_184614_ca().func_77973_b()).customArrow(abstractarrowentity);
+    public void performRangedAttack(LivingEntity p_82196_1_, float p_82196_2_) {
+-      ItemStack itemstack = this.getProjectile(this.getItemInHand(ProjectileHelper.getWeaponHoldingHand(this, Items.BOW)));
++      ItemStack itemstack = this.getProjectile(this.getItemInHand(ProjectileHelper.getWeaponHoldingHand(this, item -> item instanceof BowItem)));
+       AbstractArrowEntity abstractarrowentity = this.getArrow(itemstack, p_82196_2_);
++      if (this.getMainHandItem().getItem() == Items.BOW) {
++         abstractarrowentity = ((net.minecraft.item.BowItem) this.getMainHandItem().getItem()).customArrow(abstractarrowentity);
 +      }
-       double d0 = p_82196_1_.func_226277_ct_() - this.func_226277_ct_();
-       double d1 = p_82196_1_.func_226283_e_(0.3333333333333333D) - abstractarrowentity.func_226278_cu_();
-       double d2 = p_82196_1_.func_226281_cx_() - this.func_226281_cx_();
--      double d3 = (double)MathHelper.func_76133_a(d0 * d0 + d2 * d2);
--      abstractarrowentity.func_70186_c(d0, d1 + d3 * (double)0.2F, d2, 1.6F, (float)(14 - this.field_70170_p.func_175659_aa().func_151525_a() * 4));
-+      double d3 = (double) MathHelper.func_76133_a(d0 * d0 + d2 * d2);
-+      abstractarrowentity.func_70186_c(d0, d1 + d3 * (double) 0.2F, d2, 1.6F, (float) (14 - this.field_70170_p.func_175659_aa().func_151525_a() * 4));
+       double d0 = p_82196_1_.getX() - this.getX();
+       double d1 = p_82196_1_.getY(0.3333333333333333D) - abstractarrowentity.getY();
+       double d2 = p_82196_1_.getZ() - this.getZ();
+-      double d3 = (double)MathHelper.sqrt(d0 * d0 + d2 * d2);
+-      abstractarrowentity.shoot(d0, d1 + d3 * (double)0.2F, d2, 1.6F, (float)(14 - this.level.getDifficulty().getId() * 4));
++      double d3 = (double) MathHelper.sqrt(d0 * d0 + d2 * d2);
++      abstractarrowentity.shoot(d0, d1 + d3 * (double) 0.2F, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
 +      // CraftBukkit start
-+      org.bukkit.event.entity.EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(this, this.func_184614_ca(), null, abstractarrowentity, Hand.MAIN_HAND, 0.8F, true);
++      org.bukkit.event.entity.EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, abstractarrowentity, Hand.MAIN_HAND, 0.8F, true);
 +      if (event.isCancelled()) {
 +         event.getProjectile().remove();
 +         return;
 +      }
 +      if (event.getProjectile() == abstractarrowentity.getBukkitEntity()) {
-+         field_70170_p.func_217376_c(abstractarrowentity);
++         level.addFreshEntity(abstractarrowentity);
 +      }
 +      // CraftBukkit end
-       this.func_184185_a(SoundEvents.field_187866_fi, 1.0F, 1.0F / (this.func_70681_au().nextFloat() * 0.4F + 0.8F));
--      this.field_70170_p.func_217376_c(abstractarrowentity);
+       this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+-      this.level.addFreshEntity(abstractarrowentity);
 +      // this.world.addEntity(abstractarrowentity); // CraftBukkit - moved up
     }
  
-    protected AbstractArrowEntity func_213624_b(ItemStack p_213624_1_, float p_213624_2_) {
+    protected AbstractArrowEntity getArrow(ItemStack p_213624_1_, float p_213624_2_) {

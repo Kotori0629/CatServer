@@ -6,11 +6,11 @@
  
 +   // Paper start - Optimize Voxel Shape Merging
     @VisibleForTesting
--   protected static IDoubleListMerger func_199410_a(int p_199410_0_, DoubleList p_199410_1_, DoubleList p_199410_2_, boolean p_199410_3_, boolean p_199410_4_) {
+-   protected static IDoubleListMerger createIndexMerger(int p_199410_0_, DoubleList p_199410_1_, DoubleList p_199410_2_, boolean p_199410_3_, boolean p_199410_4_) {
 -      int i = p_199410_1_.size() - 1;
 -      int j = p_199410_2_.size() - 1;
 -      if (p_199410_1_ instanceof DoubleRangeList && p_199410_2_ instanceof DoubleRangeList) {
-+   private static IDoubleListMerger func_199410_a(int p_199410_0_, DoubleList p_199410_1_, DoubleList p_199410_2_, boolean p_199410_3_, boolean p_199410_4_) {
++   private static IDoubleListMerger createIndexMerger(int p_199410_0_, DoubleList p_199410_1_, DoubleList p_199410_2_, boolean p_199410_3_, boolean p_199410_4_) {
 +       // fast track the most common scenario
 +       // doublelist is usually a DoubleArrayList with Infinite head/tails that falls to the final else clause
 +       // This is actually the most common path, so jump to it straight away
@@ -25,7 +25,7 @@
 +      int i = list1.size() - 1;
 +      int j = list2.size() - 1;
 +      if (list1 instanceof DoubleRangeList && list2 instanceof DoubleRangeList) {
-          long k = func_197877_a(i, j);
+          long k = lcm(i, j);
           if ((long)p_199410_0_ * k <= 256L) {
              return new DoubleCubeMergingList(i, j);
           }

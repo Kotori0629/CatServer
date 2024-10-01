@@ -24,51 +24,51 @@
     public LeashKnotEntity(EntityType<? extends LeashKnotEntity> p_i50223_1_, World p_i50223_2_) {
 @@ -45,6 +_,8 @@
  
-    protected void func_174856_o() {
-       this.func_226288_n_((double)this.field_174861_a.func_177958_n() + 0.5D, (double)this.field_174861_a.func_177956_o() + 0.5D, (double)this.field_174861_a.func_177952_p() + 0.5D);
-+      if (this.isAddedToWorld() && this.field_70170_p instanceof net.minecraft.world.server.ServerWorld) ((net.minecraft.world.server.ServerWorld)this.field_70170_p).func_217464_b(this); // Forge - Process chunk registration after moving.
-+      if(valid) ((ServerWorld) field_70170_p).func_217464_b(this); // CraftBukkit
+    protected void recalculateBoundingBox() {
+       this.setPosRaw((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D);
++      if (this.isAddedToWorld() && this.level instanceof net.minecraft.world.server.ServerWorld) ((net.minecraft.world.server.ServerWorld)this.level).updateChunkPos(this); // Forge - Process chunk registration after moving.
++      if(valid) ((ServerWorld) level).updateChunkPos(this); // CraftBukkit
     }
  
-    public void func_174859_a(Direction p_174859_1_) {
+    public void setDirection(Direction p_174859_1_) {
 @@ -87,19 +_,39 @@
  
           for(MobEntity mobentity : list) {
-             if (mobentity.func_110166_bE() == p_184230_1_) {
+             if (mobentity.getLeashHolder() == p_184230_1_) {
 +               // CraftBukkit start
 +               if (CraftEventFactory.callPlayerLeashEntityEvent(mobentity, this, p_184230_1_).isCancelled()) {
-+                  ((ServerPlayerEntity) p_184230_1_).field_71135_a.func_147359_a(new SMountEntityPacket(mobentity, mobentity.func_110166_bE()));
++                  ((ServerPlayerEntity) p_184230_1_).connection.send(new SMountEntityPacket(mobentity, mobentity.getLeashHolder()));
 +                  continue;
 +               }
 +               // CraftBukkit end
-                mobentity.func_110162_b(this, true);
+                mobentity.setLeashedTo(this, true);
                 flag = true;
              }
           }
  
           if (!flag) {
--            this.func_70106_y();
--            if (p_184230_1_.field_71075_bZ.field_75098_d) {
+-            this.remove();
+-            if (p_184230_1_.abilities.instabuild) {
 +            // CraftBukkit start - Move below
 +            //this.remove();
 +            boolean die = true;
 +            // CraftBukkit end
-+            if (true || p_184230_1_.field_71075_bZ.field_75098_d) { // CraftBukkit - Process for non-creative as well
++            if (true || p_184230_1_.abilities.instabuild) { // CraftBukkit - Process for non-creative as well
                 for(MobEntity mobentity1 : list) {
-                   if (mobentity1.func_110167_bD() && mobentity1.func_110166_bE() == this) {
--                     mobentity1.func_110160_i(true, false);
+                   if (mobentity1.isLeashed() && mobentity1.getLeashHolder() == this) {
+-                     mobentity1.dropLeash(true, false);
 +                     // CraftBukkit start
 +                     if (CraftEventFactory.callPlayerUnleashEntityEvent(mobentity1, p_184230_1_).isCancelled()) {
 +                        die = false;
 +                        continue;
 +                     }
-+                     mobentity1.func_110160_i(true,!p_184230_1_.field_71075_bZ.field_75098_d); // flase -> survival mode boolean
++                     mobentity1.dropLeash(true,!p_184230_1_.abilities.instabuild); // flase -> survival mode boolean
 +                     // CraftBukkit end
                    }
                 }
 +               // CraftBukkit start
 +               if(die){
-+                  this.func_70106_y();
++                  this.remove();
 +               }
 +               // CraftBukkit end
              }

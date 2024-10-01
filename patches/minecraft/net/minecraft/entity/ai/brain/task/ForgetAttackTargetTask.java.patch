@@ -11,11 +11,11 @@
 +import org.bukkit.event.entity.EntityTargetEvent;
  
  public class ForgetAttackTargetTask<E extends MobEntity> extends Task<E> {
-    private final Predicate<E> field_233973_b_;
+    private final Predicate<E> canAttackPredicate;
 @@ -42,6 +_,13 @@
     }
  
-    private void func_233976_a_(E p_233976_1_, LivingEntity p_233976_2_) {
+    private void setAttackTarget(E p_233976_1_, LivingEntity p_233976_2_) {
 +      // CraftBukkit start
 +      EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(p_233976_1_, p_233976_2_, (p_233976_2_ instanceof ServerPlayerEntity) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
 +      if (event.isCancelled()) {
@@ -23,6 +23,6 @@
 +      }
 +      p_233976_2_ = (event.getTarget() != null) ? ((CraftLivingEntity) event.getTarget()).getHandle() : null;
 +      // CraftBukkit end
-       p_233976_1_.func_213375_cj().func_218205_a(MemoryModuleType.field_234103_o_, p_233976_2_);
-       p_233976_1_.func_213375_cj().func_218189_b(MemoryModuleType.field_223021_x);
+       p_233976_1_.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, p_233976_2_);
+       p_233976_1_.getBrain().eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
     }

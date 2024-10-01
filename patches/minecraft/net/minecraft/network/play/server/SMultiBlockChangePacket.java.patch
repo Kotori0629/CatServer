@@ -11,9 +11,9 @@
 @@ -31,7 +_,7 @@
  
        for(short short1 : p_i242085_2_) {
-          this.field_244306_b[i] = short1;
--         this.field_244307_c[i] = p_i242085_3_.func_177485_a(SectionPos.func_243641_a(short1), SectionPos.func_243642_b(short1), SectionPos.func_243643_c(short1));
-+         this.field_244307_c[i] = (p_i242085_3_ != null) ? p_i242085_3_.func_177485_a(SectionPos.func_243641_a(short1), SectionPos.func_243642_b(short1), SectionPos.func_243643_c(short1)): Blocks.field_150350_a.func_176223_P(); // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
+          this.positions[i] = short1;
+-         this.states[i] = p_i242085_3_.getBlockState(SectionPos.sectionRelativeX(short1), SectionPos.sectionRelativeY(short1), SectionPos.sectionRelativeZ(short1));
++         this.states[i] = (p_i242085_3_ != null) ? p_i242085_3_.getBlockState(SectionPos.sectionRelativeX(short1), SectionPos.sectionRelativeY(short1), SectionPos.sectionRelativeZ(short1)): Blocks.AIR.defaultBlockState(); // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
           ++i;
        }
  

@@ -11,29 +11,29 @@
     _interface = IRendersAsItem.class
  )
  public class FireworkRocketEntity extends ProjectileEntity implements IRendersAsItem {
--   private static final DataParameter<ItemStack> field_184566_a = EntityDataManager.func_187226_a(FireworkRocketEntity.class, DataSerializers.field_187196_f);
-+   public static final DataParameter<ItemStack> field_184566_a = EntityDataManager.func_187226_a(FireworkRocketEntity.class, DataSerializers.field_187196_f);
-    private static final DataParameter<OptionalInt> field_191512_b = EntityDataManager.func_187226_a(FireworkRocketEntity.class, DataSerializers.field_218814_r);
--   private static final DataParameter<Boolean> field_213895_d = EntityDataManager.func_187226_a(FireworkRocketEntity.class, DataSerializers.field_187198_h);
-+   public static final DataParameter<Boolean> field_213895_d = EntityDataManager.func_187226_a(FireworkRocketEntity.class, DataSerializers.field_187198_h);
-    private int field_92056_a;
--   private int field_92055_b;
-+   public int field_92055_b;
-    private LivingEntity field_191513_e;
+-   private static final DataParameter<ItemStack> DATA_ID_FIREWORKS_ITEM = EntityDataManager.defineId(FireworkRocketEntity.class, DataSerializers.ITEM_STACK);
++   public static final DataParameter<ItemStack> DATA_ID_FIREWORKS_ITEM = EntityDataManager.defineId(FireworkRocketEntity.class, DataSerializers.ITEM_STACK);
+    private static final DataParameter<OptionalInt> DATA_ATTACHED_TO_TARGET = EntityDataManager.defineId(FireworkRocketEntity.class, DataSerializers.OPTIONAL_UNSIGNED_INT);
+-   private static final DataParameter<Boolean> DATA_SHOT_AT_ANGLE = EntityDataManager.defineId(FireworkRocketEntity.class, DataSerializers.BOOLEAN);
++   public static final DataParameter<Boolean> DATA_SHOT_AT_ANGLE = EntityDataManager.defineId(FireworkRocketEntity.class, DataSerializers.BOOLEAN);
+    private int life;
+-   private int lifetime;
++   public int lifetime;
+    private LivingEntity attachedToEntity;
  
     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> p_i50164_1_, World p_i50164_2_) {
 @@ -82,6 +_,21 @@
-       this.func_212361_a(p_i231582_3_);
+       this.setOwner(p_i231582_3_);
     }
  
 +   // Spigot Start - copied from tick
 +   @Override
 +   public void inactiveTick() {
-+      this.field_92056_a += 1;
-+      if (!this.field_70170_p.field_72995_K && this.field_92056_a > this.field_92055_b) {
++      this.life += 1;
++      if (!this.level.isClientSide && this.life > this.lifetime) {
 +         // CraftBukkit start
 +         if (!org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+            this.func_191510_k();
++            this.dealExplosionDamage();
 +         }
 +         // CraftBukkit end
 +      }
@@ -41,71 +41,71 @@
 +   }
 +   // Spigot End
 +
-    protected void func_70088_a() {
-       this.field_70180_af.func_187214_a(field_184566_a, ItemStack.field_190927_a);
-       this.field_70180_af.func_187214_a(field_191512_b, OptionalInt.empty());
+    protected void defineSynchedData() {
+       this.entityData.define(DATA_ID_FIREWORKS_ITEM, ItemStack.EMPTY);
+       this.entityData.define(DATA_ATTACHED_TO_TARGET, OptionalInt.empty());
 @@ -136,7 +_,7 @@
  
-       RayTraceResult raytraceresult = ProjectileHelper.func_234618_a_(this, this::func_230298_a_);
-       if (!this.field_70145_X) {
--         this.func_70227_a(raytraceresult);
+       RayTraceResult raytraceresult = ProjectileHelper.getHitResult(this, this::canHitEntity);
+       if (!this.noPhysics) {
+-         this.onHit(raytraceresult);
 +         this.preOnHit(raytraceresult);
-          this.field_70160_al = true;
+          this.hasImpulse = true;
        }
  
 @@ -151,9 +_,19 @@
        }
  
-       if (!this.field_70170_p.field_72995_K && this.field_92056_a > this.field_92055_b) {
--         this.func_213893_k();
+       if (!this.level.isClientSide && this.life > this.lifetime) {
+-         this.explode();
 +         // CraftBukkit start
 +         if (!CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+            this.func_213893_k();
++            this.explode();
 +         }
        }
 +         // CraftBukkit end
 +   }
  
 +   @Override
-+   protected void func_70227_a(RayTraceResult result) {
-+      if (result.func_216346_c() == RayTraceResult.Type.MISS || !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, result)) {
-+         super.func_70227_a(result);
++   protected void onHit(RayTraceResult result) {
++      if (result.getType() == RayTraceResult.Type.MISS || !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, result)) {
++         super.onHit(result);
 +      }
     }
  
-    private void func_213893_k() {
+    private void explode() {
 @@ -165,7 +_,11 @@
-    protected void func_213868_a(EntityRayTraceResult p_213868_1_) {
-       super.func_213868_a(p_213868_1_);
-       if (!this.field_70170_p.field_72995_K) {
--         this.func_213893_k();
+    protected void onHitEntity(EntityRayTraceResult p_213868_1_) {
+       super.onHitEntity(p_213868_1_);
+       if (!this.level.isClientSide) {
+-         this.explode();
 +         // CraftBukkit start
 +         if (!CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+            this.func_213893_k();
++            this.explode();
 +         }
 +         // CraftBukkit end
        }
     }
  
 @@ -173,7 +_,11 @@
-       BlockPos blockpos = new BlockPos(p_230299_1_.func_216350_a());
-       this.field_70170_p.func_180495_p(blockpos).func_196950_a(this.field_70170_p, blockpos, this);
-       if (!this.field_70170_p.func_201670_d() && this.func_213894_l()) {
--         this.func_213893_k();
+       BlockPos blockpos = new BlockPos(p_230299_1_.getBlockPos());
+       this.level.getBlockState(blockpos).entityInside(this.level, blockpos, this);
+       if (!this.level.isClientSide() && this.hasExplosion()) {
+-         this.explode();
 +         // CraftBukkit start
 +         if (!CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+            this.func_213893_k();
++            this.explode();
 +         }
 +         // CraftBukkit end
        }
  
-       super.func_230299_a_(p_230299_1_);
+       super.onHitBlock(p_230299_1_);
 @@ -197,7 +_,9 @@
  
        if (f > 0.0F) {
-          if (this.field_191513_e != null) {
+          if (this.attachedToEntity != null) {
 +            CraftEventFactory.entityDamage = this; // CraftBukkit
-             this.field_191513_e.func_70097_a(DamageSource.func_233548_a_(this, this.func_234616_v_()), 5.0F + (float)(listnbt.size() * 2));
+             this.attachedToEntity.hurt(DamageSource.fireworks(this, this.getOwner()), 5.0F + (float)(listnbt.size() * 2));
 +            CraftEventFactory.entityDamage = null; // CraftBukkit
           }
  
@@ -113,9 +113,9 @@
 @@ -218,7 +_,9 @@
  
                 if (flag) {
-                   float f1 = f * (float)Math.sqrt((5.0D - (double)this.func_70032_d(livingentity)) / 5.0D);
+                   float f1 = f * (float)Math.sqrt((5.0D - (double)this.distanceTo(livingentity)) / 5.0D);
 +                  CraftEventFactory.entityDamage = this; // CraftBukkit
-                   livingentity.func_70097_a(DamageSource.func_233548_a_(this, this.func_234616_v_()), f1);
+                   livingentity.hurt(DamageSource.fireworks(this, this.getOwner()), f1);
 +                  CraftEventFactory.entityDamage = null; // CraftBukkit
                 }
              }

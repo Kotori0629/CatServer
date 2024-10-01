@@ -16,22 +16,22 @@
 +import org.bukkit.inventory.InventoryHolder;
  
  public class CraftResultInventory implements IInventory, IRecipeHolder {
-    private final NonNullList<ItemStack> field_70467_a = NonNullList.func_191197_a(1, ItemStack.field_190927_a);
+    private final NonNullList<ItemStack> itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
     @Nullable
-    private IRecipe<?> field_193057_b;
+    private IRecipe<?> recipeUsed;
 +
 +   // CraftBukkit start
 +
 +   private int maxStack = MAX_STACK;
 +
 +   @Override
-+   public int func_70297_j_() {
++   public int getMaxStackSize() {
 +      return this.maxStack;
 +   }
 +
 +   @Override
 +   public List<ItemStack> getContents() {
-+      return this.field_70467_a;
++      return this.itemStacks;
 +   }
 +
 +   // Don't need a transaction; the InventoryCrafting keeps track of it for us
@@ -63,5 +63,5 @@
 +   }
 +   // CraftBukkit end
  
-    public int func_70302_i_() {
+    public int getContainerSize() {
        return 1;

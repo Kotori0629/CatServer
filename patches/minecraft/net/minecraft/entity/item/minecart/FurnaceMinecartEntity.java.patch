@@ -3,12 +3,12 @@
 @@ -25,7 +_,7 @@
  
  public class FurnaceMinecartEntity extends AbstractMinecartEntity {
-    private static final DataParameter<Boolean> field_184275_c = EntityDataManager.func_187226_a(FurnaceMinecartEntity.class, DataSerializers.field_187198_h);
--   private int field_94110_c;
-+   public int field_94110_c; // CraftBukkit PAIL private -> public, RENAME fuel
-    public double field_94111_a;
-    public double field_94109_b;
-    private static final Ingredient field_195407_e = Ingredient.func_199804_a(Items.field_151044_h, Items.field_196155_l);
+    private static final DataParameter<Boolean> DATA_ID_FUEL = EntityDataManager.defineId(FurnaceMinecartEntity.class, DataSerializers.BOOLEAN);
+-   private int fuel;
++   public int fuel; // CraftBukkit PAIL private -> public, RENAME fuel
+    public double xPush;
+    public double zPush;
+    private static final Ingredient INGREDIENT = Ingredient.of(Items.COAL, Items.CHARCOAL);
 @@ -72,6 +_,11 @@
        return 0.2D;
     }
@@ -18,15 +18,15 @@
 +      return 0.2f;
 +   }
 +
-    public void func_94095_a(DamageSource p_94095_1_) {
-       super.func_94095_a(p_94095_1_);
-       if (!p_94095_1_.func_94541_c() && this.field_70170_p.func_82736_K().func_223586_b(GameRules.field_223604_g)) {
+    public void destroy(DamageSource p_94095_1_) {
+       super.destroy(p_94095_1_);
+       if (!p_94095_1_.isExplosion() && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
 @@ -111,6 +_,8 @@
     }
  
-    public ActionResultType func_184230_a(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-+      ActionResultType ret = super.func_184230_a(p_184230_1_, p_184230_2_);
-+      if (ret.func_226246_a_()) return ret;
-       ItemStack itemstack = p_184230_1_.func_184586_b(p_184230_2_);
-       if (field_195407_e.test(itemstack) && this.field_94110_c + 3600 <= 32000) {
-          if (!p_184230_1_.field_71075_bZ.field_75098_d) {
+    public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
++      ActionResultType ret = super.interact(p_184230_1_, p_184230_2_);
++      if (ret.consumesAction()) return ret;
+       ItemStack itemstack = p_184230_1_.getItemInHand(p_184230_2_);
+       if (INGREDIENT.test(itemstack) && this.fuel + 3600 <= 32000) {
+          if (!p_184230_1_.abilities.instabuild) {

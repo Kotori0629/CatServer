@@ -29,37 +29,37 @@
 +import org.bukkit.event.weather.WeatherChangeEvent;
  
  public class ServerWorldInfo implements IServerWorldInfo, IServerConfiguration {
-    private static final Logger field_237341_a_ = LogManager.getLogger();
--   private WorldSettings field_237342_b_;
-+   public WorldSettings field_237342_b_;
-    private final DimensionGeneratorSettings field_237343_c_;
-    private final Lifecycle field_237344_d_;
-    private int field_237345_e_;
+    private static final Logger LOGGER = LogManager.getLogger();
+-   private WorldSettings settings;
++   public WorldSettings settings;
+    private final DimensionGeneratorSettings worldGenSettings;
+    private final Lifecycle worldGenSettingsLifecycle;
+    private int xSpawn;
 @@ -75,6 +_,7 @@
-    private final Set<String> field_237338_B_;
-    private boolean field_237339_C_;
-    private final TimerCallbackManager<MinecraftServer> field_237340_D_;
+    private final Set<String> knownServerBrands;
+    private boolean wasModded;
+    private final TimerCallbackManager<MinecraftServer> scheduledEvents;
 +   public ServerWorld world; // CraftBukkit
  
     private ServerWorldInfo(@Nullable DataFixer p_i242043_1_, int p_i242043_2_, @Nullable CompoundNBT p_i242043_3_, boolean p_i242043_4_, int p_i242043_5_, int p_i242043_6_, int p_i242043_7_, float p_i242043_8_, long p_i242043_9_, long p_i242043_11_, int p_i242043_13_, int p_i242043_14_, int p_i242043_15_, boolean p_i242043_16_, int p_i242043_17_, boolean p_i242043_18_, boolean p_i242043_19_, boolean p_i242043_20_, WorldBorder.Serializer p_i242043_21_, int p_i242043_22_, int p_i242043_23_, @Nullable UUID p_i242043_24_, LinkedHashSet<String> p_i242043_25_, TimerCallbackManager<MinecraftServer> p_i242043_26_, @Nullable CompoundNBT p_i242043_27_, CompoundNBT p_i242043_28_, WorldSettings p_i242043_29_, DimensionGeneratorSettings p_i242043_30_, Lifecycle p_i242043_31_) {
-       this.field_237350_j_ = p_i242043_1_;
+       this.fixerUpper = p_i242043_1_;
 @@ -189,6 +_,7 @@
-          p_237370_2_.func_186854_a("WanderingTraderId", this.field_237337_A_);
+          p_237370_2_.putUUID("WanderingTraderId", this.wanderingTraderId);
        }
  
-+      p_237370_2_.func_74778_a("Bukkit.Version", "CatServer/1.16.5/" + org.bukkit.craftbukkit.v1_16_R3.util.Versioning.getBukkitVersion()); // CraftBukkit
++      p_237370_2_.putString("Bukkit.Version", "CatServer/1.16.5/" + org.bukkit.craftbukkit.v1_16_R3.util.Versioning.getBukkitVersion()); // CraftBukkit
     }
  
-    public int func_76079_c() {
+    public int getXSpawn() {
 @@ -286,6 +_,19 @@
     }
  
-    public void func_76069_a(boolean p_76069_1_) {
+    public void setThundering(boolean p_76069_1_) {
 +      // CraftBukkit start
-+      if (this.field_237358_r_ == p_76069_1_) {
++      if (this.thundering == p_76069_1_) {
 +         return;
 +      }
-+      org.bukkit.World world = Bukkit.getWorld(func_76065_j());
++      org.bukkit.World world = Bukkit.getWorld(getLevelName());
 +      if (world != null) {
 +         ThunderChangeEvent thunder = new ThunderChangeEvent(world, p_76069_1_);
 +         Bukkit.getServer().getPluginManager().callEvent(thunder);
@@ -68,18 +68,18 @@
 +         }
 +      }
 +      // CraftBukkit end
-       this.field_237358_r_ = p_76069_1_;
+       this.thundering = p_76069_1_;
     }
  
 @@ -302,6 +_,19 @@
     }
  
-    public void func_76084_b(boolean p_76084_1_) {
+    public void setRaining(boolean p_76084_1_) {
 +      // CraftBukkit start
-+      if (this.field_237356_p_ == p_76084_1_) {
++      if (this.raining == p_76084_1_) {
 +         return;
 +      }
-+      org.bukkit.World world = Bukkit.getWorld(func_76065_j());
++      org.bukkit.World world = Bukkit.getWorld(getLevelName());
 +      if (world != null) {
 +         WeatherChangeEvent weather = new WeatherChangeEvent(world, p_76084_1_);
 +         Bukkit.getServer().getPluginManager().callEvent(weather);
@@ -88,13 +88,13 @@
 +         }
 +      }
 +      // CraftBukkit end
-       this.field_237356_p_ = p_76084_1_;
+       this.raining = p_76084_1_;
     }
  
 @@ -355,6 +_,12 @@
  
-    public void func_230409_a_(Difficulty p_230409_1_) {
-       this.field_237342_b_ = this.field_237342_b_.func_234948_a_(p_230409_1_);
+    public void setDifficulty(Difficulty p_230409_1_) {
+       this.settings = this.settings.withDifficulty(p_230409_1_);
 +      /*/ CraftBukkit start
 +      SServerDifficultyPacket packet = new SServerDifficultyPacket(this.getDifficulty(), this.isDifficultyLocked());
 +      for (ServerPlayerEntity player : world.getPlayers()) {
@@ -103,16 +103,16 @@
 +      // CraftBukkit end*/
     }
  
-    public boolean func_176123_z() {
+    public boolean isDifficultyLocked() {
 @@ -449,4 +_,12 @@
-    public WorldSettings func_230408_H_() {
-       return this.field_237342_b_.func_234959_h_();
+    public WorldSettings getLevelSettings() {
+       return this.settings.copy();
     }
 +
 +   // CraftBukkit start - Check if the name stored in NBT is the correct one
 +   public void checkName(String name) {
-+      if (!this.field_237342_b_.field_234943_a_.equals(name)) {
-+         this.field_237342_b_.field_234943_a_ = name;
++      if (!this.settings.levelName.equals(name)) {
++         this.settings.levelName = name;
 +      }
 +   }
 +   // CraftBukkit end

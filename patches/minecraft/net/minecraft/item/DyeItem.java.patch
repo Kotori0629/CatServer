@@ -8,22 +8,22 @@
 +import org.bukkit.event.entity.SheepDyeWoolEvent;
 +
  public class DyeItem extends Item {
-    private static final Map<DyeColor, DyeItem> field_195963_a = Maps.newEnumMap(DyeColor.class);
-    private final DyeColor field_195964_b;
+    private static final Map<DyeColor, DyeItem> ITEM_BY_COLOR = Maps.newEnumMap(DyeColor.class);
+    private final DyeColor dyeColor;
 @@ -23,7 +_,15 @@
           SheepEntity sheepentity = (SheepEntity)p_111207_3_;
-          if (sheepentity.func_70089_S() && !sheepentity.func_70892_o() && sheepentity.func_175509_cj() != this.field_195964_b) {
-             if (!p_111207_2_.field_70170_p.field_72995_K) {
--               sheepentity.func_175512_b(this.field_195964_b);
+          if (sheepentity.isAlive() && !sheepentity.isSheared() && sheepentity.getColor() != this.dyeColor) {
+             if (!p_111207_2_.level.isClientSide) {
+-               sheepentity.setColor(this.dyeColor);
 +               // CraftBukkit start
-+               byte bColor = (byte) this.field_195964_b.func_196059_a();
++               byte bColor = (byte) this.dyeColor.getId();
 +               SheepDyeWoolEvent event = new SheepDyeWoolEvent((org.bukkit.entity.Sheep) sheepentity.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData(bColor));
-+               sheepentity.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++               sheepentity.level.getCBServer().getPluginManager().callEvent(event);
 +               if (event.isCancelled()) {
 +                  return ActionResultType.PASS;
 +               }
-+               sheepentity.func_175512_b(DyeColor.func_196056_a(event.getColor().getWoolData()));
++               sheepentity.setColor(DyeColor.byId(event.getColor().getWoolData()));
 +               // CraftBukkit end
-                p_111207_1_.func_190918_g(1);
+                p_111207_1_.shrink(1);
              }
  

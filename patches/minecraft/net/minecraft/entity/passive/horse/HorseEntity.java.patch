@@ -1,20 +1,20 @@
 --- a/net/minecraft/entity/passive/horse/HorseEntity.java
 +++ b/net/minecraft/entity/passive/horse/HorseEntity.java
 @@ -89,7 +_,7 @@
-       return this.field_70180_af.func_187225_a(field_184789_bG);
+       return this.entityData.get(DATA_ID_TYPE_VARIANT);
     }
  
--   private void func_234238_a_(CoatColors p_234238_1_, CoatTypes p_234238_2_) {
-+   public void func_234238_a_(CoatColors p_234238_1_, CoatTypes p_234238_2_) {
-       this.func_234242_w_(p_234238_1_.func_234253_a_() & 255 | p_234238_2_.func_234247_a_() << 8 & '\uff00');
+-   private void setVariantAndMarkings(CoatColors p_234238_1_, CoatTypes p_234238_2_) {
++   public void setVariantAndMarkings(CoatColors p_234238_1_, CoatTypes p_234238_2_) {
+       this.setTypeVariant(p_234238_1_.getId() & 255 | p_234238_2_.getId() << 8 & '\uff00');
     }
  
 @@ -139,6 +_,8 @@
-          this.func_184185_a(SoundEvents.field_187705_cn, p_190680_1_.func_185843_a() * 0.6F, p_190680_1_.func_185847_b());
+          this.playSound(SoundEvents.HORSE_BREATHE, p_190680_1_.getVolume() * 0.6F, p_190680_1_.getPitch());
        }
  
-+      ItemStack stack = this.field_110296_bG.func_70301_a(1);
-+      if (func_190682_f(stack)) stack.onHorseArmorTick(field_70170_p, this);
++      ItemStack stack = this.inventory.getItem(1);
++      if (isArmor(stack)) stack.onHorseArmorTick(level, this);
     }
  
-    protected SoundEvent func_184639_G() {
+    protected SoundEvent getAmbientSound() {

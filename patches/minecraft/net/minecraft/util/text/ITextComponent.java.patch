@@ -19,7 +19,7 @@
 +// CraftBukkit start
 +public interface ITextComponent extends Message, ITextProperties, Iterable<ITextComponent>  {
 +   default Stream<ITextComponent> stream() {
-+      return Streams.concat(new Stream[]{Stream.of(this), this.func_150253_a().stream().flatMap(ITextComponent::stream)});
++      return Streams.concat(new Stream[]{Stream.of(this), this.getSiblings().stream().flatMap(ITextComponent::stream)});
 +   }
 +
 +   @Override
@@ -28,6 +28,6 @@
 +   }
 +   // CraftBukkit end
 +
-    Style func_150256_b();
+    Style getStyle();
  
-    String func_150261_e();
+    String getContents();

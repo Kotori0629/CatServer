@@ -1,24 +1,24 @@
 --- a/net/minecraft/item/FlintAndSteelItem.java
 +++ b/net/minecraft/item/FlintAndSteelItem.java
 @@ -23,7 +_,7 @@
-       World world = p_195939_1_.func_195991_k();
-       BlockPos blockpos = p_195939_1_.func_195995_a();
-       BlockState blockstate = world.func_180495_p(blockpos);
--      if (CampfireBlock.func_241470_h_(blockstate)) {
-+      if (CampfireBlock.func_241470_h_(blockstate) && !org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callBlockIgniteEvent(world, blockpos, playerentity).isCancelled()) { // CraftBukkit
-          world.func_184133_a(playerentity, blockpos, SoundEvents.field_187649_bu, SoundCategory.BLOCKS, 1.0F, field_77697_d.nextFloat() * 0.4F + 0.8F);
-          world.func_180501_a(blockpos, blockstate.func_206870_a(BlockStateProperties.field_208190_q, Boolean.valueOf(true)), 11);
+       World world = p_195939_1_.getLevel();
+       BlockPos blockpos = p_195939_1_.getClickedPos();
+       BlockState blockstate = world.getBlockState(blockpos);
+-      if (CampfireBlock.canLight(blockstate)) {
++      if (CampfireBlock.canLight(blockstate) && !org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callBlockIgniteEvent(world, blockpos, playerentity).isCancelled()) { // CraftBukkit
+          world.playSound(playerentity, blockpos, SoundEvents.FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, random.nextFloat() * 0.4F + 0.8F);
+          world.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)), 11);
           if (playerentity != null) {
 @@ -36,6 +_,12 @@
        } else {
-          BlockPos blockpos1 = blockpos.func_177972_a(p_195939_1_.func_196000_l());
-          if (AbstractFireBlock.func_241465_a_(world, blockpos1, p_195939_1_.func_195992_f())) {
+          BlockPos blockpos1 = blockpos.relative(p_195939_1_.getClickedFace());
+          if (AbstractFireBlock.canBePlacedAt(world, blockpos1, p_195939_1_.getHorizontalDirection())) {
 +            // CraftBukkit start - Store the clicked block
 +            if (org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callBlockIgniteEvent(world, blockpos1, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, playerentity).isCancelled()) {
-+               p_195939_1_.func_195996_i().func_222118_a(1, playerentity, (entityhuman1) -> entityhuman1.func_213334_d(p_195939_1_.func_221531_n()));
++               p_195939_1_.getItemInHand().hurtAndBreak(1, playerentity, (entityhuman1) -> entityhuman1.broadcastBreakEvent(p_195939_1_.getHand()));
 +               return ActionResultType.PASS;
 +            }
 +            // CraftBukkit end
-             world.func_184133_a(playerentity, blockpos1, SoundEvents.field_187649_bu, SoundCategory.BLOCKS, 1.0F, field_77697_d.nextFloat() * 0.4F + 0.8F);
-             BlockState blockstate1 = AbstractFireBlock.func_235326_a_(world, blockpos1);
-             world.func_180501_a(blockpos1, blockstate1, 11);
+             world.playSound(playerentity, blockpos1, SoundEvents.FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, random.nextFloat() * 0.4F + 0.8F);
+             BlockState blockstate1 = AbstractFireBlock.getState(world, blockpos1);
+             world.setBlock(blockpos1, blockstate1, 11);

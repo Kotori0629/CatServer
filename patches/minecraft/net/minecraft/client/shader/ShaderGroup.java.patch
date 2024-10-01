@@ -5,8 +5,8 @@
                       }
  
 -                     ResourceLocation resourcelocation = new ResourceLocation("textures/effect/" + s4 + ".png");
-+                     ResourceLocation rl = ResourceLocation.func_208304_a(s4);
-+                     ResourceLocation resourcelocation = new ResourceLocation(rl.func_110624_b(), "textures/effect/" + rl.func_110623_a() + ".png");
++                     ResourceLocation rl = ResourceLocation.tryParse(s4);
++                     ResourceLocation resourcelocation = new ResourceLocation(rl.getNamespace(), "textures/effect/" + rl.getPath() + ".png");
                       IResource iresource = null;
  
                       try {

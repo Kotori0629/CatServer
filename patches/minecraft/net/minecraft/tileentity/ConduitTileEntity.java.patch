@@ -9,37 +9,37 @@
 +import org.bukkit.event.entity.EntityPotionEffectEvent.Cause;
  
  public class ConduitTileEntity extends TileEntity implements ITickableTileEntity {
-    private static final Block[] field_205042_e = new Block[]{Blocks.field_180397_cI, Blocks.field_196779_gQ, Blocks.field_180398_cJ, Blocks.field_196781_gR};
+    private static final Block[] VALID_BLOCKS = new Block[]{Blocks.PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.DARK_PRISMARINE};
 @@ -131,7 +_,7 @@
-                   BlockState blockstate = this.field_145850_b.func_180495_p(blockpos1);
+                   BlockState blockstate = this.level.getBlockState(blockpos1);
  
-                   for(Block block : field_205042_e) {
--                     if (blockstate.func_203425_a(block)) {
-+                     if (blockstate.isConduitFrame(this.field_145850_b, blockpos1, func_174877_v())) {
-                         this.field_205046_i.add(blockpos1);
+                   for(Block block : VALID_BLOCKS) {
+-                     if (blockstate.is(block)) {
++                     if (blockstate.isConduitFrame(this.level, blockpos1, getBlockPos())) {
+                         this.effectBlocks.add(blockpos1);
                       }
                    }
 @@ -155,7 +_,7 @@
        if (!list.isEmpty()) {
           for(PlayerEntity playerentity : list) {
-             if (this.field_174879_c.func_218141_a(playerentity.func_233580_cy_(), (double)j) && playerentity.func_70026_G()) {
--               playerentity.func_195064_c(new EffectInstance(Effects.field_205136_C, 260, 0, true, true));
-+               playerentity.addEffect(new EffectInstance(Effects.field_205136_C, 260, 0, true, true), Cause.CONDUIT); // CraftBukkit
+             if (this.worldPosition.closerThan(playerentity.blockPosition(), (double)j) && playerentity.isInWaterOrRain()) {
+-               playerentity.addEffect(new EffectInstance(Effects.CONDUIT_POWER, 260, 0, true, true));
++               playerentity.addEffect(new EffectInstance(Effects.CONDUIT_POWER, 260, 0, true, true), Cause.CONDUIT); // CraftBukkit
              }
           }
  
 @@ -182,8 +_,13 @@
        }
  
-       if (this.field_205047_j != null) {
+       if (this.destroyTarget != null) {
 +         // CraftBukkit start
-+         CraftEventFactory.blockDamage = CraftBlock.at(this.field_145850_b, this.field_174879_c);
-+         if (this.field_205047_j.func_70097_a(DamageSource.field_76376_m, 4.0F)) {
-          this.field_145850_b.func_184148_a((PlayerEntity)null, this.field_205047_j.func_226277_ct_(), this.field_205047_j.func_226278_cu_(), this.field_205047_j.func_226281_cx_(), SoundEvents.field_206936_aP, SoundCategory.BLOCKS, 1.0F, 1.0F);
--         this.field_205047_j.func_70097_a(DamageSource.field_76376_m, 4.0F);
++         CraftEventFactory.blockDamage = CraftBlock.at(this.level, this.worldPosition);
++         if (this.destroyTarget.hurt(DamageSource.MAGIC, 4.0F)) {
+          this.level.playSound((PlayerEntity)null, this.destroyTarget.getX(), this.destroyTarget.getY(), this.destroyTarget.getZ(), SoundEvents.CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
+-         this.destroyTarget.hurt(DamageSource.MAGIC, 4.0F);
 +         }
 +         CraftEventFactory.blockDamage = null;
 +         // CraftBukkit end
        }
  
-       if (livingentity != this.field_205047_j) {
+       if (livingentity != this.destroyTarget) {

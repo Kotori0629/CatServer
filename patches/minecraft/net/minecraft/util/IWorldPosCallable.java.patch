@@ -21,16 +21,16 @@
 +      throw new UnsupportedOperationException("Not supported yet.");
 +   }
 +   default org.bukkit.Location getLocation() {
-+      return new org.bukkit.Location(getWorld().getWorld(), getPosition().func_177958_n(), getPosition().func_177956_o(), getPosition().func_177952_p());
++      return new org.bukkit.Location(getWorld().getWorld(), getPosition().getX(), getPosition().getY(), getPosition().getZ());
 +   }
 +   // CraftBukkit end
 +
-    IWorldPosCallable field_221489_a = new IWorldPosCallable() {
-       public <T> Optional<T> func_221484_a(BiFunction<World, BlockPos, T> p_221484_1_) {
+    IWorldPosCallable NULL = new IWorldPosCallable() {
+       public <T> Optional<T> evaluate(BiFunction<World, BlockPos, T> p_221484_1_) {
           return Optional.empty();
 @@ -15,6 +_,18 @@
  
-    static IWorldPosCallable func_221488_a(final World p_221488_0_, final BlockPos p_221488_1_) {
+    static IWorldPosCallable create(final World p_221488_0_, final BlockPos p_221488_1_) {
        return new IWorldPosCallable() {
 +         // CraftBukkit start
 +         @Override
@@ -44,6 +44,6 @@
 +         }
 +         // CraftBukkit end
 +
-          public <T> Optional<T> func_221484_a(BiFunction<World, BlockPos, T> p_221484_1_) {
+          public <T> Optional<T> evaluate(BiFunction<World, BlockPos, T> p_221484_1_) {
              return Optional.of(p_221484_1_.apply(p_221488_0_, p_221488_1_));
           }

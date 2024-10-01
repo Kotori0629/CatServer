@@ -7,13 +7,13 @@
 +import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
  
  public class DefendVillageTargetGoal extends TargetGoal {
-    private final IronGolemEntity field_75305_a;
+    private final IronGolemEntity golem;
 @@ -44,7 +_,7 @@
     }
  
-    public void func_75249_e() {
--      this.field_75305_a.func_70624_b(this.field_75304_b);
-+      this.field_75305_a.setGoalTarget(this.field_75304_b, TargetReason.DEFEND_VILLAGE, true); // CraftBukkit - reason
-       super.func_75249_e();
+    public void start() {
+-      this.golem.setTarget(this.potentialTarget);
++      this.golem.setGoalTarget(this.potentialTarget, TargetReason.DEFEND_VILLAGE, true); // CraftBukkit - reason
+       super.start();
     }
  }

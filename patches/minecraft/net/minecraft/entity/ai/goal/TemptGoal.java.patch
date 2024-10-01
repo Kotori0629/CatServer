@@ -20,32 +20,32 @@
 -import net.minecraft.pathfinding.GroundPathNavigator;
  
  public class TemptGoal extends Goal {
-    private static final EntityPredicate field_220762_c = (new EntityPredicate()).func_221013_a(10.0D).func_221008_a().func_221011_b().func_221009_d().func_221014_c();
+    private static final EntityPredicate TEMP_TARGETING = (new EntityPredicate()).range(10.0D).allowInvulnerable().allowSameTeam().allowNonAttackable().allowUnseeable();
 @@ -34,9 +_,9 @@
-       this.field_151484_k = p_i47823_5_;
-       this.field_75285_l = p_i47823_4_;
-       this.func_220684_a(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
--      if (!(p_i47823_1_.func_70661_as() instanceof GroundPathNavigator) && !(p_i47823_1_.func_70661_as() instanceof FlyingPathNavigator)) {
+       this.items = p_i47823_5_;
+       this.canScare = p_i47823_4_;
+       this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+-      if (!(p_i47823_1_.getNavigation() instanceof GroundPathNavigator) && !(p_i47823_1_.getNavigation() instanceof FlyingPathNavigator)) {
 +      /* if (!(p_i47823_1_.getNavigation() instanceof GroundPathNavigator) && !(p_i47823_1_.getNavigation() instanceof FlyingPathNavigator)) {
           throw new IllegalArgumentException("Unsupported mob type for TemptGoal");
 -      }
 +      } */
     }
  
-    public boolean func_75250_a() {
+    public boolean canUse() {
 @@ -45,12 +_,24 @@
           return false;
        } else {
-          this.field_75289_h = this.field_75284_a.field_70170_p.func_217370_a(field_220762_c, this.field_75284_a);
--         if (this.field_75289_h == null) {
+          this.player = this.mob.level.getNearestPlayer(TEMP_TARGETING, this.mob);
+-         if (this.player == null) {
 -            return false;
 -         } else {
--            return this.func_188508_a(this.field_75289_h.func_184614_ca()) || this.func_188508_a(this.field_75289_h.func_184592_cb());
+-            return this.shouldFollowItem(this.player.getMainHandItem()) || this.shouldFollowItem(this.player.getOffhandItem());
 +         // CraftBukkit start
-+         boolean tempt = this.field_75289_h != null && (this.func_188508_a(this.field_75289_h.func_184614_ca()) || this.func_188508_a(this.field_75289_h.func_184592_cb()));
-+         if (field_75289_h instanceof LivingEntity) {
++         boolean tempt = this.player != null && (this.shouldFollowItem(this.player.getMainHandItem()) || this.shouldFollowItem(this.player.getOffhandItem()));
++         if (player instanceof LivingEntity) {
 +            if (tempt) {
-+               EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this.field_75284_a, this.field_75289_h, EntityTargetEvent.TargetReason.TEMPT);
++               EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, EntityTargetEvent.TargetReason.TEMPT);
 +               if (event.isCancelled()) {
 +                  return false;
 +               }
@@ -58,7 +58,7 @@
 +   }
 +
 +   public void quarkFix(PlayerEntity player) {
-+      this.field_75289_h = player;
++      this.player = player;
     }
  
-    protected boolean func_188508_a(ItemStack p_188508_1_) {
+    protected boolean shouldFollowItem(ItemStack p_188508_1_) {

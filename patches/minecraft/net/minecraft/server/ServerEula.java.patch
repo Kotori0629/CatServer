@@ -5,6 +5,6 @@
     }
  
 +
-    public boolean func_154346_a() {
-       return this.field_154351_c;
+    public boolean hasAgreedToEULA() {
+       return this.agreed;
     }

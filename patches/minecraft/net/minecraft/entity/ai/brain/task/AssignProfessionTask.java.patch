@@ -11,17 +11,17 @@
  public class AssignProfessionTask extends Task<VillagerEntity> {
     public AssignProfessionTask() {
 @@ -36,7 +_,13 @@
-                return p_220389_1_.func_221149_b() == p_220390_0_;
+                return p_220389_1_.getJobPoiType() == p_220390_0_;
              }).findFirst();
           }).ifPresent((p_220388_2_) -> {
--            p_212831_2_.func_213753_a(p_212831_2_.func_213700_eh().func_221126_a(p_220388_2_));
+-            p_212831_2_.setVillagerData(p_212831_2_.getVillagerData().setProfession(p_220388_2_));
 +            // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
 +            VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(p_212831_2_, CraftVillager.nmsToBukkitProfession(p_220388_2_), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
 +            if (event.isCancelled()) {
 +               return;
 +            }
-+            p_212831_2_.func_213753_a(p_212831_2_.func_213700_eh().func_221126_a(CraftVillager.bukkitToNmsProfession(event.getProfession())));
++            p_212831_2_.setVillagerData(p_212831_2_.getVillagerData().setProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
 +            // CraftBukkit end
-             p_212831_2_.func_213770_a(p_212831_1_);
+             p_212831_2_.refreshBrain(p_212831_1_);
           });
        }

@@ -7,25 +7,25 @@
 +import org.bukkit.command.CommandSender;
  
  public interface ICommandSource {
-    ICommandSource field_213139_a_ = new ICommandSource() {
+    ICommandSource NULL = new ICommandSource() {
 @@ -19,6 +_,13 @@
-       public boolean func_195041_r_() {
+       public boolean shouldInformAdmins() {
           return false;
        }
 +
 +      // CraftBukkit start
 +      @Override
 +      public CommandSender getBukkitSender(CommandSource wrapper) {
-+         return wrapper.func_197028_i().console;
++         return wrapper.getServer().console;
 +      }
 +      // CraftBukkit end
     };
  
-    void func_145747_a(ITextComponent p_145747_1_, UUID p_145747_2_);
+    void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_);
 @@ -28,4 +_,39 @@
-    boolean func_195040_b();
+    boolean acceptsFailure();
  
-    boolean func_195041_r_();
+    boolean shouldInformAdmins();
 +
 +   default CommandSender getBukkitSender(CommandSource wrapper) {
 +      if (this instanceof net.minecraft.entity.Entity) {
@@ -34,7 +34,7 @@
 +         return new org.bukkit.craftbukkit.v1_16_R3.command.ServerCommandSender() {
 +            @Override
 +            public boolean isOp() {
-+               return wrapper.func_197034_c(4);
++               return wrapper.hasPermission(4);
 +            }
 +
 +            @Override
@@ -44,13 +44,13 @@
 +
 +            @Override
 +            public void sendMessage(@org.jetbrains.annotations.NotNull String message) {
-+               ICommandSource.this.func_145747_a(new net.minecraft.util.text.StringTextComponent(message + "\n"), net.minecraft.util.Util.field_240973_b_);
++               ICommandSource.this.sendMessage(new net.minecraft.util.text.StringTextComponent(message + "\n"), net.minecraft.util.Util.NIL_UUID);
 +            }
 +
 +            @Override
 +            public void sendMessage(@org.jetbrains.annotations.NotNull String[] messages) {
 +               for (String message : messages) {
-+                  ICommandSource.this.func_145747_a(new net.minecraft.util.text.StringTextComponent(message + "\n"), net.minecraft.util.Util.field_240973_b_);
++                  ICommandSource.this.sendMessage(new net.minecraft.util.text.StringTextComponent(message + "\n"), net.minecraft.util.Util.NIL_UUID);
 +               }
 +            }
 +

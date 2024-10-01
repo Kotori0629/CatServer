@@ -4,22 +4,22 @@
  import net.minecraftforge.api.distmarker.OnlyIn;
  
  public class CPlayerPacket implements IPacket<IServerPlayNetHandler> {
--   protected double field_149479_a;
--   protected double field_149477_b;
--   protected double field_149478_c;
--   protected float field_149476_e;
--   protected float field_149473_f;
--   protected boolean field_149474_g;
--   protected boolean field_149480_h;
--   protected boolean field_149481_i;
-+   public double field_149479_a;
-+   public double field_149477_b;
-+   public double field_149478_c;
-+   public float field_149476_e;
-+   public float field_149473_f;
-+   public boolean field_149474_g;
-+   public boolean field_149480_h;
-+   public boolean field_149481_i;
+-   protected double x;
+-   protected double y;
+-   protected double z;
+-   protected float yRot;
+-   protected float xRot;
+-   protected boolean onGround;
+-   protected boolean hasPos;
+-   protected boolean hasRot;
++   public double x;
++   public double y;
++   public double z;
++   public float yRot;
++   public float xRot;
++   public boolean onGround;
++   public boolean hasPos;
++   public boolean hasRot;
  
     public CPlayerPacket() {
     }

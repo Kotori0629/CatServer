@@ -10,31 +10,31 @@
  public class FireChargeItem extends Item {
     public FireChargeItem(Item.Properties p_i48499_1_) {
 @@ -21,12 +_,28 @@
-       BlockState blockstate = world.func_180495_p(blockpos);
+       BlockState blockstate = world.getBlockState(blockpos);
        boolean flag = false;
-       if (CampfireBlock.func_241470_h_(blockstate)) {
+       if (CampfireBlock.canLight(blockstate)) {
 +         // CraftBukkit start - fire BlockIgniteEvent
-+         if (CraftEventFactory.callBlockIgniteEvent(world, blockpos, BlockIgniteEvent.IgniteCause.FIREBALL, p_195939_1_.func_195999_j()).isCancelled()) {
-+            if (!p_195939_1_.func_195999_j().field_71075_bZ.field_75098_d) {
-+               p_195939_1_.func_195996_i().func_190918_g(1);
++         if (CraftEventFactory.callBlockIgniteEvent(world, blockpos, BlockIgniteEvent.IgniteCause.FIREBALL, p_195939_1_.getPlayer()).isCancelled()) {
++            if (!p_195939_1_.getPlayer().abilities.instabuild) {
++               p_195939_1_.getItemInHand().shrink(1);
 +            }
 +            return ActionResultType.PASS;
 +         }
 +         // CraftBukkit end
-          this.func_219995_a(world, blockpos);
-          world.func_175656_a(blockpos, blockstate.func_206870_a(CampfireBlock.field_220101_b, Boolean.valueOf(true)));
+          this.playSound(world, blockpos);
+          world.setBlockAndUpdate(blockpos, blockstate.setValue(CampfireBlock.LIT, Boolean.valueOf(true)));
           flag = true;
        } else {
-          blockpos = blockpos.func_177972_a(p_195939_1_.func_196000_l());
-          if (AbstractFireBlock.func_241465_a_(world, blockpos, p_195939_1_.func_195992_f())) {
+          blockpos = blockpos.relative(p_195939_1_.getClickedFace());
+          if (AbstractFireBlock.canBePlacedAt(world, blockpos, p_195939_1_.getHorizontalDirection())) {
 +            // CraftBukkit start - fire BlockIgniteEvent
-+            if (CraftEventFactory.callBlockIgniteEvent(world, blockpos, BlockIgniteEvent.IgniteCause.FIREBALL, p_195939_1_.func_195999_j()).isCancelled()) {
-+               if (!p_195939_1_.func_195999_j().field_71075_bZ.field_75098_d) {
-+                  p_195939_1_.func_195996_i().func_190918_g(1);
++            if (CraftEventFactory.callBlockIgniteEvent(world, blockpos, BlockIgniteEvent.IgniteCause.FIREBALL, p_195939_1_.getPlayer()).isCancelled()) {
++               if (!p_195939_1_.getPlayer().abilities.instabuild) {
++                  p_195939_1_.getItemInHand().shrink(1);
 +               }
 +               return ActionResultType.PASS;
 +            }
 +            // CraftBukkit end
-             this.func_219995_a(world, blockpos);
-             world.func_175656_a(blockpos, AbstractFireBlock.func_235326_a_(world, blockpos));
+             this.playSound(world, blockpos);
+             world.setBlockAndUpdate(blockpos, AbstractFireBlock.getState(world, blockpos));
              flag = true;

@@ -9,22 +9,22 @@
 +import org.bukkit.event.entity.EntityTargetEvent;
  
  public class FindNewAttackTargetTask<E extends MobEntity> extends Task<E> {
-    private final Predicate<LivingEntity> field_233981_b_;
+    private final Predicate<LivingEntity> stopAttackingWhen;
 @@ -57,6 +_,17 @@
     }
  
-    private void func_233987_d_(E p_233987_1_) {
+    private void clearAttackTarget(E p_233987_1_) {
 +      // CraftBukkit start
-+      LivingEntity old = p_233987_1_.func_213375_cj().func_218207_c(MemoryModuleType.field_234103_o_).orElse(null);
-+      EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(p_233987_1_, null, (old != null && !old.func_70089_S()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++      LivingEntity old = p_233987_1_.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++      EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(p_233987_1_, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
 +      if (event.isCancelled()) {
 +         return;
 +      }
 +      if (event.getTarget() != null) {
-+         p_233987_1_.func_213375_cj().func_218205_a(MemoryModuleType.field_234103_o_, ((CraftLivingEntity) event.getTarget()).getHandle());
++         p_233987_1_.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
 +         return;
 +      }
 +      // CraftBukkit end
-       p_233987_1_.func_213375_cj().func_218189_b(MemoryModuleType.field_234103_o_);
+       p_233987_1_.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
     }
  }

@@ -8,22 +8,22 @@
  
 -public class Advancement {
 +public class Advancement implements net.minecraftforge.common.extensions.IForgeAdvancementBuilder {
-    private final Advancement field_192076_a;
-    private final DisplayInfo field_192077_b;
-    private final AdvancementRewards field_192078_c;
+    private final Advancement parent;
+    private final DisplayInfo display;
+    private final AdvancementRewards rewards;
 @@ -38,6 +_,7 @@
-    private final String[][] field_192081_f;
-    private final Set<Advancement> field_192082_g = Sets.newLinkedHashSet();
-    private final ITextComponent field_193125_h;
+    private final String[][] requirements;
+    private final Set<Advancement> children = Sets.newLinkedHashSet();
+    private final ITextComponent chatComponent;
 +   public final org.bukkit.advancement.Advancement bukkit = new CraftAdvancement(this); // CraftBukkit
  
     public Advancement(ResourceLocation p_i47472_1_, @Nullable Advancement p_i47472_2_, @Nullable DisplayInfo p_i47472_3_, AdvancementRewards p_i47472_4_, Map<String, Criterion> p_i47472_5_, String[][] p_i47472_6_) {
-       this.field_192079_d = p_i47472_1_;
+       this.id = p_i47472_1_;
 @@ -309,6 +_,7 @@
        }
  
-       public static Advancement.Builder func_241043_a_(JsonObject p_241043_0_, ConditionArrayParser p_241043_1_) {
+       public static Advancement.Builder fromJson(JsonObject p_241043_0_, ConditionArrayParser p_241043_1_) {
 +         if ((p_241043_0_ = net.minecraftforge.common.crafting.ConditionalAdvancement.processConditional(p_241043_0_)) == null) return null;
-          ResourceLocation resourcelocation = p_241043_0_.has("parent") ? new ResourceLocation(JSONUtils.func_151200_h(p_241043_0_, "parent")) : null;
-          DisplayInfo displayinfo = p_241043_0_.has("display") ? DisplayInfo.func_192294_a(JSONUtils.func_152754_s(p_241043_0_, "display")) : null;
-          AdvancementRewards advancementrewards = p_241043_0_.has("rewards") ? AdvancementRewards.func_241096_a_(JSONUtils.func_152754_s(p_241043_0_, "rewards")) : AdvancementRewards.field_192114_a;
+          ResourceLocation resourcelocation = p_241043_0_.has("parent") ? new ResourceLocation(JSONUtils.getAsString(p_241043_0_, "parent")) : null;
+          DisplayInfo displayinfo = p_241043_0_.has("display") ? DisplayInfo.fromJson(JSONUtils.getAsJsonObject(p_241043_0_, "display")) : null;
+          AdvancementRewards advancementrewards = p_241043_0_.has("rewards") ? AdvancementRewards.deserialize(JSONUtils.getAsJsonObject(p_241043_0_, "rewards")) : AdvancementRewards.EMPTY;

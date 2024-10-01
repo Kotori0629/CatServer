@@ -8,17 +8,17 @@
 +import org.bukkit.event.entity.EntityInteractEvent;
  
  public class TripWireBlock extends Block {
-    public static final BooleanProperty field_176293_a = BlockStateProperties.field_208194_u;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 @@ -121,6 +_,36 @@
              }
           }
        }
 +
 +      // CraftBukkit start - Call interact even when triggering connected tripwire
-+      if (flag != flag1 && flag1 && (Boolean) blockstate.func_177229_b(field_176294_M)) {
++      if (flag != flag1 && flag1 && (Boolean) blockstate.getValue(ATTACHED)) {
 +         org.bukkit.World bworld = p_176288_1_.getWorld();
 +         org.bukkit.plugin.PluginManager manager = p_176288_1_.getCBServer().getPluginManager();
-+         org.bukkit.block.Block block = bworld.getBlockAt(p_176288_2_.func_177958_n(), p_176288_2_.func_177956_o(), p_176288_2_.func_177952_p());
++         org.bukkit.block.Block block = bworld.getBlockAt(p_176288_2_.getX(), p_176288_2_.getY(), p_176288_2_.getZ());
 +         boolean allowed = false;
 +         // If all of the events are cancelled block the tripwire trigger, else allow
 +         for (Object object : list) {
@@ -45,4 +45,4 @@
 +      // CraftBukkit end
  
        if (flag1 != flag) {
-          blockstate = blockstate.func_206870_a(field_176293_a, Boolean.valueOf(flag1));
+          blockstate = blockstate.setValue(POWERED, Boolean.valueOf(flag1));

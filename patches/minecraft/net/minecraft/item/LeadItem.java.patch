@@ -9,16 +9,16 @@
  public class LeadItem extends Item {
     public LeadItem(Item.Properties p_i48484_1_) {
 @@ -43,7 +_,22 @@
-          if (mobentity.func_110166_bE() == p_226641_0_) {
+          if (mobentity.getLeashHolder() == p_226641_0_) {
              if (leashknotentity == null) {
-                leashknotentity = LeashKnotEntity.func_213855_a(p_226641_1_, p_226641_2_);
+                leashknotentity = LeashKnotEntity.getOrCreateKnot(p_226641_1_, p_226641_2_);
 -            }
 +
 +               // CraftBukkit start - fire HangingPlaceEvent
 +               HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) leashknotentity.getBukkitEntity(), p_226641_0_ != null ? (org.bukkit.entity.Player) p_226641_0_.getBukkitEntity() : null, p_226641_1_.getWorld().getBlockAt(i, j, k), org.bukkit.block.BlockFace.SELF);
 +               p_226641_1_.getCBServer().getPluginManager().callEvent(event);
 +               if (event.isCancelled()) {
-+                  leashknotentity.func_70106_y();
++                  leashknotentity.remove();
 +                  return ActionResultType.PASS;
 +               }
 +               // CraftBukkit end
@@ -30,5 +30,5 @@
 +            }
 +            // CraftBukkit end
  
-             mobentity.func_110162_b(leashknotentity, true);
+             mobentity.setLeashedTo(leashknotentity, true);
              flag = true;

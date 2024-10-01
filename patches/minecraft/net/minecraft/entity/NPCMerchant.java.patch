@@ -7,11 +7,11 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftMerchant;
  
  public class NPCMerchant implements IMerchant {
-    private final MerchantInventory field_70937_a;
+    private final MerchantInventory container;
 @@ -66,5 +_,10 @@
  
-    public SoundEvent func_213714_ea() {
-       return SoundEvents.field_187915_go;
+    public SoundEvent getNotifyTradeSound() {
+       return SoundEvents.VILLAGER_YES;
 +   }
 +
 +   @Override

@@ -8,15 +8,40 @@
  import net.minecraft.util.AxisRotation;
  import net.minecraft.util.Direction;
  import net.minecraft.util.Rotation;
-@@ -39,6 +_,11 @@
-    private static final long field_177993_j = (1L << field_177991_c) - 1L;
-    private static final int field_218292_j = field_177989_d;
-    private static final int field_218293_k = field_177989_d + field_177991_c;
-+
+@@ -40,6 +_,11 @@
+    private static final int Z_OFFSET = PACKED_Y_LENGTH;
+    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_Z_LENGTH;
+ 
 +   // CraftBukkit
 +   public BlockPos(Entity p_i46032_1_) {
-+      this(p_i46032_1_.func_226277_ct_(), p_i46032_1_.func_226278_cu_(), p_i46032_1_.func_226281_cx_());
++      this(p_i46032_1_.getX(), p_i46032_1_.getY(), p_i46032_1_.getZ());
 +   }
- 
++
     public BlockPos(int p_i46030_1_, int p_i46030_2_, int p_i46030_3_) {
        super(p_i46030_1_, p_i46030_2_, p_i46030_3_);
+    }
+@@ -114,6 +_,24 @@
+    public BlockPos subtract(Vector3i p_177973_1_) {
+       return this.offset(-p_177973_1_.getX(), -p_177973_1_.getY(), -p_177973_1_.getZ());
+    }
++
++   // CatServer start
++   public BlockPos up() {
++      return this.above();
++   }
++
++   public BlockPos up(int p_177981_1_) {
++      return this.above(p_177981_1_);
++   }
++
++   public BlockPos down() {
++      return this.below();
++   }
++
++   public BlockPos down(int p_177980_1_) {
++      return this.below(p_177980_1_);
++   }
++   // CatServer end
+ 
+    public BlockPos above() {
+       return this.relative(Direction.UP);

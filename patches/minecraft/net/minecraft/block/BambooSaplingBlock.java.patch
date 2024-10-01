@@ -7,12 +7,12 @@
 +import org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory;
  
  public class BambooSaplingBlock extends Block implements IGrowable {
-    protected static final VoxelShape field_220088_a = Block.func_208617_a(4.0D, 0.0D, 4.0D, 12.0D, 12.0D, 12.0D);
+    protected static final VoxelShape SAPLING_SHAPE = Block.box(4.0D, 0.0D, 4.0D, 12.0D, 12.0D, 12.0D);
 @@ -78,6 +_,6 @@
     }
  
-    protected void func_220087_a(World p_220087_1_, BlockPos p_220087_2_) {
--      p_220087_1_.func_180501_a(p_220087_2_.func_177984_a(), Blocks.field_222405_kQ.func_176223_P().func_206870_a(BambooBlock.field_220265_e, BambooLeaves.SMALL), 3);
-+      CraftEventFactory.handleBlockSpreadEvent(p_220087_1_, p_220087_2_, p_220087_2_.func_177984_a(), Blocks.field_222405_kQ.func_176223_P().func_206870_a(BambooBlock.field_220265_e, BambooLeaves.SMALL), 3); // CraftBukkit - BlockSpreadEvent
+    protected void growBamboo(World p_220087_1_, BlockPos p_220087_2_) {
+-      p_220087_1_.setBlock(p_220087_2_.above(), Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3);
++      CraftEventFactory.handleBlockSpreadEvent(p_220087_1_, p_220087_2_, p_220087_2_.above(), Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.LEAVES, BambooLeaves.SMALL), 3); // CraftBukkit - BlockSpreadEvent
     }
  }

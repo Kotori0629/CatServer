@@ -8,40 +8,40 @@
 +import org.bukkit.event.entity.EntityPotionEffectEvent.Cause;
  
  public class ParrotEntity extends ShoulderRidingEntity implements IFlyingAnimal {
-    private static final DataParameter<Integer> field_192013_bG = EntityDataManager.func_187226_a(ParrotEntity.class, DataSerializers.field_187192_b);
+    private static final DataParameter<Integer> DATA_VARIANT_ID = EntityDataManager.defineId(ParrotEntity.class, DataSerializers.INT);
 @@ -237,7 +_,7 @@
           }
  
-          if (!this.field_70170_p.field_72995_K) {
--            if (this.field_70146_Z.nextInt(10) == 0) {
-+            if (this.field_70146_Z.nextInt(10) == 0 && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, p_230254_1_) && !CraftEventFactory.callEntityTameEvent(this, p_230254_1_).isCancelled()) { // CraftBukkit
-                this.func_193101_c(p_230254_1_);
-                this.field_70170_p.func_72960_a(this, (byte)7);
+          if (!this.level.isClientSide) {
+-            if (this.random.nextInt(10) == 0) {
++            if (this.random.nextInt(10) == 0 && !net.minecraftforge.event.ForgeEventFactory.onAnimalTame(this, p_230254_1_) && !CraftEventFactory.callEntityTameEvent(this, p_230254_1_).isCancelled()) { // CraftBukkit
+                this.tame(p_230254_1_);
+                this.level.broadcastEntityEvent(this, (byte)7);
              } else {
 @@ -251,7 +_,7 @@
-             itemstack.func_190918_g(1);
+             itemstack.shrink(1);
           }
  
--         this.func_195064_c(new EffectInstance(Effects.field_76436_u, 900));
-+         this.addEffect(new EffectInstance(Effects.field_76436_u, 900), Cause.FOOD); // CraftBukkit
-          if (p_230254_1_.func_184812_l_() || !this.func_190530_aW()) {
-             this.func_70097_a(DamageSource.func_76365_a(p_230254_1_), Float.MAX_VALUE);
+-         this.addEffect(new EffectInstance(Effects.POISON, 900));
++         this.addEffect(new EffectInstance(Effects.POISON, 900), Cause.FOOD); // CraftBukkit
+          if (p_230254_1_.isCreative() || !this.isInvulnerable()) {
+             this.hurt(DamageSource.playerAttack(p_230254_1_), Float.MAX_VALUE);
           }
 @@ -349,7 +_,7 @@
     }
  
-    public boolean func_70104_M() {
+    public boolean isPushable() {
 -      return true;
-+      return super.func_70104_M(); // CraftBukkit - collidable API
++      return super.isPushable(); // CraftBukkit - collidable API
     }
  
-    protected void func_82167_n(Entity p_82167_1_) {
+    protected void doPush(Entity p_82167_1_) {
 @@ -362,7 +_,7 @@
-       if (this.func_180431_b(p_70097_1_)) {
+       if (this.isInvulnerableTo(p_70097_1_)) {
           return false;
        } else {
--         this.func_233687_w_(false);
+-         this.setOrderedToSit(false);
 +         //this.setOrderedToSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
-          return super.func_70097_a(p_70097_1_, p_70097_2_);
+          return super.hurt(p_70097_1_, p_70097_2_);
        }
     }

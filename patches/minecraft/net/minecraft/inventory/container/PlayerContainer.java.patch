@@ -11,18 +11,18 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryView;
  
  public class PlayerContainer extends RecipeBookContainer<CraftingInventory> {
-    public static final ResourceLocation field_226615_c_ = new ResourceLocation("textures/atlas/blocks.png");
+    public static final ResourceLocation BLOCK_ATLAS = new ResourceLocation("textures/atlas/blocks.png");
 @@ -26,15 +_,27 @@
-    public static final ResourceLocation field_226620_h_ = new ResourceLocation("item/empty_armor_slot_shield");
-    private static final ResourceLocation[] field_200829_h = new ResourceLocation[]{field_226619_g_, field_226618_f_, field_226617_e_, field_226616_d_};
-    private static final EquipmentSlotType[] field_185003_h = new EquipmentSlotType[]{EquipmentSlotType.HEAD, EquipmentSlotType.CHEST, EquipmentSlotType.LEGS, EquipmentSlotType.FEET};
--   private final CraftingInventory field_75181_e = new CraftingInventory(this, 2, 2);
+    public static final ResourceLocation EMPTY_ARMOR_SLOT_SHIELD = new ResourceLocation("item/empty_armor_slot_shield");
+    private static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{EMPTY_ARMOR_SLOT_BOOTS, EMPTY_ARMOR_SLOT_LEGGINGS, EMPTY_ARMOR_SLOT_CHESTPLATE, EMPTY_ARMOR_SLOT_HELMET};
+    private static final EquipmentSlotType[] SLOT_IDS = new EquipmentSlotType[]{EquipmentSlotType.HEAD, EquipmentSlotType.CHEST, EquipmentSlotType.LEGS, EquipmentSlotType.FEET};
+-   private final CraftingInventory craftSlots = new CraftingInventory(this, 2, 2);
 +   // CraftBukkit start
-+   private final CraftingInventory field_75181_e = new CraftingInventory(this, 2, 2); // LoliServer
-    private final CraftResultInventory field_75179_f = new CraftResultInventory();
++   private final CraftingInventory craftSlots = new CraftingInventory(this, 2, 2); // LoliServer
+    private final CraftResultInventory resultSlots = new CraftResultInventory();
 +   // CraftBukkit end
-    public final boolean field_75180_g;
-    private final PlayerEntity field_82862_h;
+    public final boolean active;
+    private final PlayerEntity owner;
 +   // CraftBukkit start
 +   private CraftInventoryView bukkitEntity = null;
 +   private PlayerInventory playerCB;
@@ -30,37 +30,37 @@
  
     public PlayerContainer(PlayerInventory p_i1819_1_, boolean p_i1819_2_, PlayerEntity p_i1819_3_) {
        super((ContainerType<?>)null, 0);
-       this.field_75180_g = p_i1819_2_;
-       this.field_82862_h = p_i1819_3_;
+       this.active = p_i1819_2_;
+       this.owner = p_i1819_3_;
 +      // CraftBukkit start
-+      this.field_75181_e.setOwner(p_i1819_1_.field_70458_d); // LoliServer
-+      this.field_75181_e.resultInventory = this.field_75179_f; // CraftBukkit - let InventoryCrafting know about its result slo
++      this.craftSlots.setOwner(p_i1819_1_.player); // LoliServer
++      this.craftSlots.resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slo
 +      this.playerCB = p_i1819_1_; // CraftBukkit - save player
 +      setTitle(new StringTextComponent("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
 +      // CraftBukkit end
-       this.func_75146_a(new CraftingResultSlot(p_i1819_1_.field_70458_d, this.field_75181_e, this.field_75179_f, 0, 154, 28));
+       this.addSlot(new CraftingResultSlot(p_i1819_1_.player, this.craftSlots, this.resultSlots, 0, 154, 28));
  
        for(int i = 0; i < 2; ++i) {
 @@ -51,7 +_,7 @@
              }
  
-             public boolean func_75214_a(ItemStack p_75214_1_) {
--               return equipmentslottype == MobEntity.func_184640_d(p_75214_1_);
-+               return p_75214_1_.canEquip(equipmentslottype, field_82862_h);
+             public boolean mayPlace(ItemStack p_75214_1_) {
+-               return equipmentslottype == MobEntity.getEquipmentSlotForItem(p_75214_1_);
++               return p_75214_1_.canEquip(equipmentslottype, owner);
              }
  
-             public boolean func_82869_a(PlayerEntity p_82869_1_) {
+             public boolean mayPickup(PlayerEntity p_82869_1_) {
 @@ -98,7 +_,7 @@
     }
  
-    public void func_75130_a(IInventory p_75130_1_) {
--      WorkbenchContainer.func_217066_a(this.field_75152_c, this.field_82862_h.field_70170_p, this.field_82862_h, this.field_75181_e, this.field_75179_f);
-+      WorkbenchContainer.slotChangedCraftingGrid(this.field_75152_c, this.field_82862_h.field_70170_p, this.field_82862_h, this.field_75181_e, this.field_75179_f, this);  // CraftBukkit
+    public void slotsChanged(IInventory p_75130_1_) {
+-      WorkbenchContainer.slotChangedCraftingGrid(this.containerId, this.owner.level, this.owner, this.craftSlots, this.resultSlots);
++      WorkbenchContainer.slotChangedCraftingGrid(this.containerId, this.owner.level, this.owner, this.craftSlots, this.resultSlots, this);  // CraftBukkit
     }
  
-    public void func_75134_a(PlayerEntity p_75134_1_) {
+    public void removed(PlayerEntity p_75134_1_) {
 @@ -203,4 +_,16 @@
-    public RecipeBookCategory func_241850_m() {
+    public RecipeBookCategory getRecipeBookType() {
        return RecipeBookCategory.CRAFTING;
     }
 +
@@ -70,8 +70,8 @@
 +      if (bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.field_75181_e, this.field_75179_f);
-+      bukkitEntity = new CraftInventoryView(this.playerCB.field_70458_d.getBukkitEntity(), inventory, this);
++      CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftSlots, this.resultSlots);
++      bukkitEntity = new CraftInventoryView(this.playerCB.player.getBukkitEntity(), inventory, this);
 +      return bukkitEntity;
 +   }
 +   // CraftBukkit end

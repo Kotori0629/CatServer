@@ -20,26 +20,26 @@
 +import org.bukkit.entity.Player;
  
  public class StonecutterContainer extends Container {
-    private final IWorldPosCallable field_217088_g;
--   private final IntReferenceHolder field_217089_h = IntReferenceHolder.func_221492_a();
+    private final IWorldPosCallable access;
+-   private final IntReferenceHolder selectedRecipeIndex = IntReferenceHolder.standalone();
 +   //private final IntReferenceHolder selectedRecipeIndex = IntReferenceHolder.standalone();
-+   private final IntReferenceHolder field_217089_h;
-    private final World field_217090_i;
-    private List<StonecuttingRecipe> field_217091_j = Lists.newArrayList();
-    private ItemStack field_217092_k = ItemStack.field_190927_a;
++   private final IntReferenceHolder selectedRecipeIndex;
+    private final World level;
+    private List<StonecuttingRecipe> recipes = Lists.newArrayList();
+    private ItemStack input = ItemStack.EMPTY;
 @@ -37,9 +_,31 @@
-          StonecutterContainer.this.func_75130_a(this);
-          StonecutterContainer.this.field_217094_m.run();
+          StonecutterContainer.this.slotsChanged(this);
+          StonecutterContainer.this.slotUpdateListener.run();
        }
 +
 +      // CraftBukkit start
 +      @Override
 +      public Location getLocation() {
-+         return field_217088_g.getLocation();
++         return access.getLocation();
 +      }
 +      // CraftBukkit end
     };
-    private final CraftResultInventory field_217095_n = new CraftResultInventory();
+    private final CraftResultInventory resultContainer = new CraftResultInventory();
  
 +   // CraftBukkit start
 +   private CraftInventoryView bukkitEntity = null;
@@ -50,57 +50,57 @@
 +      if (bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      CraftInventoryStonecutter inventory = new CraftInventoryStonecutter(this.field_217087_f, this.field_217095_n);
++      CraftInventoryStonecutter inventory = new CraftInventoryStonecutter(this.container, this.resultContainer);
 +      bukkitEntity = new CraftInventoryView(this.player, inventory, this);
 +      return bukkitEntity;
 +   }
 +   // CraftBukkit end
 +
     public StonecutterContainer(int p_i50059_1_, PlayerInventory p_i50059_2_) {
-       this(p_i50059_1_, p_i50059_2_, IWorldPosCallable.field_221489_a);
+       this(p_i50059_1_, p_i50059_2_, IWorldPosCallable.NULL);
     }
 @@ -47,6 +_,7 @@
     public StonecutterContainer(int p_i50060_1_, PlayerInventory p_i50060_2_, final IWorldPosCallable p_i50060_3_) {
-       super(ContainerType.field_221529_w, p_i50060_1_);
-       this.field_217088_g = p_i50060_3_;
-+      field_217089_h = this.func_216958_a(IntReferenceHolder.func_221497_a(new int[1], 0)); // Paper - allow replication
-       this.field_217090_i = p_i50060_2_.field_70458_d.field_70170_p;
-       this.field_217085_d = this.func_75146_a(new Slot(this.field_217087_f, 0, 20, 33));
-       this.field_217086_e = this.func_75146_a(new Slot(this.field_217095_n, 1, 143, 33) {
+       super(ContainerType.STONECUTTER, p_i50060_1_);
+       this.access = p_i50060_3_;
++      selectedRecipeIndex = this.addDataSlot(IntReferenceHolder.shared(new int[1], 0)); // Paper - allow replication
+       this.level = p_i50060_2_.player.level;
+       this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
+       this.resultSlot = this.addSlot(new Slot(this.resultContainer, 1, 143, 33) {
 @@ -85,6 +_,7 @@
        }
  
-       this.func_216958_a(this.field_217089_h);
-+      player = (Player) p_i50060_2_.field_70458_d.getBukkitEntity(); // CraftBukkit
+       this.addDataSlot(this.selectedRecipeIndex);
++      player = (Player) p_i50060_2_.player.getBukkitEntity(); // CraftBukkit
     }
  
     @OnlyIn(Dist.CLIENT)
 @@ -108,12 +_,36 @@
     }
  
-    public boolean func_75145_c(PlayerEntity p_75145_1_) {
+    public boolean stillValid(PlayerEntity p_75145_1_) {
 +      if (!this.checkReachable) return true; // CraftBukkit
-       return func_216963_a(this.field_217088_g, p_75145_1_, Blocks.field_222430_lS);
+       return stillValid(this.access, p_75145_1_, Blocks.STONECUTTER);
     }
  
-    public boolean func_75140_a(PlayerEntity p_75140_1_, int p_75140_2_) {
-       if (this.func_241818_d_(p_75140_2_)) {
--         this.field_217089_h.func_221494_a(p_75140_2_);
+    public boolean clickMenuButton(PlayerEntity p_75140_1_, int p_75140_2_) {
+       if (this.isValidRecipeIndex(p_75140_2_)) {
+-         this.selectedRecipeIndex.set(p_75140_2_);
 +         // Paper start
 +         int recipeIndex = p_75140_2_;
-+         this.field_217089_h.func_221494_a(recipeIndex);
-+         this.field_217089_h.func_221496_c();
-+         if (this.func_241818_d_(p_75140_2_)) {
-+            PlayerStonecutterRecipeSelectEvent event = new PlayerStonecutterRecipeSelectEvent((org.bukkit.entity.Player) p_75140_1_.getBukkitEntity(), (org.bukkit.inventory.StonecutterInventory) getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) this.field_217091_j.get(p_75140_2_).toBukkitRecipe());
++         this.selectedRecipeIndex.set(recipeIndex);
++         this.selectedRecipeIndex.checkAndClearUpdateFlag();
++         if (this.isValidRecipeIndex(p_75140_2_)) {
++            PlayerStonecutterRecipeSelectEvent event = new PlayerStonecutterRecipeSelectEvent((org.bukkit.entity.Player) p_75140_1_.getBukkitEntity(), (org.bukkit.inventory.StonecutterInventory) getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) this.recipes.get(p_75140_2_).toBukkitRecipe());
 +            Bukkit.getServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +               ((org.bukkit.entity.Player) p_75140_1_.getBukkitEntity()).updateInventory();
 +               return false;
 +            }
-+            if (!this.field_217091_j.get(p_75140_2_).func_199560_c().equals(
++            if (!this.recipes.get(p_75140_2_).getId().equals(
 +                    org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
-+                  for (int index = 0; index < this.field_217091_j.size(); index++) {
-+                     if (this.field_217091_j.get(index).func_199560_c().equals(org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
++                  for (int index = 0; index < this.recipes.size(); index++) {
++                     if (this.recipes.get(index).getId().equals(org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
 +                        recipeIndex = index;
 +                        break;
 +                     }
@@ -108,8 +108,8 @@
 +            }
 +         }
 +         ((org.bukkit.entity.Player) p_75140_1_.getBukkitEntity()).updateInventory();
-+         this.field_217089_h.func_221494_a(recipeIndex); // set new index, so that listeners can read it
++         this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
 +         // Paper end
-          this.func_217082_i();
+          this.setupResultSlot();
        }
  

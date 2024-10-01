@@ -17,17 +17,17 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftShapelessRecipe;
  
  public class ShapelessRecipe implements ICraftingRecipe {
-    private final ResourceLocation field_199562_a;
-    private final String field_194138_c;
-    private final ItemStack field_77580_a;
-    private final NonNullList<Ingredient> field_77579_b;
+    private final ResourceLocation id;
+    private final String group;
+    private final ItemStack result;
+    private final NonNullList<Ingredient> ingredients;
 +   private final boolean isSimple;
  
     public ShapelessRecipe(ResourceLocation p_i48161_1_, String p_i48161_2_, ItemStack p_i48161_3_, NonNullList<Ingredient> p_i48161_4_) {
-       this.field_199562_a = p_i48161_1_;
-       this.field_194138_c = p_i48161_2_;
-       this.field_77580_a = p_i48161_3_;
-       this.field_77579_b = p_i48161_4_;
+       this.id = p_i48161_1_;
+       this.group = p_i48161_2_;
+       this.result = p_i48161_3_;
+       this.ingredients = p_i48161_4_;
 -   }
 +      this.isSimple = p_i48161_4_.stream().allMatch(Ingredient::isSimple);
 +   }
@@ -35,30 +35,30 @@
 +   // CraftBukkit start
 +   @Override
 +   public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
-+      CraftItemStack result = CraftItemStack.asCraftCopy(CraftItemStack.asBukkitCopy(this.func_77571_b()));
++      CraftItemStack result = CraftItemStack.asCraftCopy(CraftItemStack.asBukkitCopy(this.getResultItem()));
 +      CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
-+      recipe.setGroup(this.field_194138_c);
-+      for (Ingredient list : this.field_77579_b) {
++      recipe.setGroup(this.group);
++      for (Ingredient list : this.ingredients) {
 +         recipe.addIngredient(CraftRecipe.toBukkit(list));
 +      }
 +      return recipe;
 +   }
 +   // CraftBukkit end
  
-    public ResourceLocation func_199560_c() {
-       return this.field_199562_a;
+    public ResourceLocation getId() {
+       return this.id;
 @@ -33,7 +_,7 @@
-       return IRecipeSerializer.field_222158_b;
+       return IRecipeSerializer.SHAPELESS_RECIPE;
     }
  
--   public String func_193358_e() {
-+    public String func_193358_e() {
-       return this.field_194138_c;
+-   public String getGroup() {
++    public String getGroup() {
+       return this.group;
     }
  
 @@ -47,17 +_,56 @@
  
-    public boolean func_77569_a(CraftingInventory p_77569_1_, World p_77569_2_) {
+    public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
        RecipeItemHelper recipeitemhelper = new RecipeItemHelper();
 +      java.util.List<ItemStack> inputs = new java.util.ArrayList<>();
        int i = 0;
@@ -68,20 +68,20 @@
 +      co.aikar.util.Counter<ItemStack> matchedProvided = new co.aikar.util.Counter<>();
 +      co.aikar.util.Counter<Ingredient> matchedIngredients = new co.aikar.util.Counter<>();
 +      // Paper end
-       for(int j = 0; j < p_77569_1_.func_70302_i_(); ++j) {
-          ItemStack itemstack = p_77569_1_.func_70301_a(j);
-          if (!itemstack.func_190926_b()) {
+       for(int j = 0; j < p_77569_1_.getContainerSize(); ++j) {
+          ItemStack itemstack = p_77569_1_.getItem(j);
+          if (!itemstack.isEmpty()) {
 -            ++i;
--            recipeitemhelper.func_221264_a(itemstack, 1);
+-            recipeitemhelper.accountStack(itemstack, 1);
 -         }
 -      }
 -
--      return i == this.field_77579_b.size() && recipeitemhelper.func_194116_a(this, (IntList)null);
+-      return i == this.ingredients.size() && recipeitemhelper.canCraft(this, (IntList)null);
 +            if (isSimple) {
 +               // Paper start
-+               itemstack = itemstack.func_77946_l();
++               itemstack = itemstack.copy();
 +               providedItems.add(itemstack);
-+               for (Ingredient ingredient : field_77579_b) {
++               for (Ingredient ingredient : ingredients) {
 +                  if (ingredient.test(itemstack)) {
 +                     matchedProvided.increment(itemstack);
 +                     matchedIngredients.increment(ingredient);
@@ -99,7 +99,7 @@
 +      if (isSimple && (matchedProvided.isEmpty() || matchedIngredients.isEmpty())) {
 +         return false;
 +      }
-+      java.util.List<Ingredient> ingredients = new java.util.ArrayList<>(this.field_77579_b);
++      java.util.List<Ingredient> ingredients = new java.util.ArrayList<>(this.ingredients);
 +      providedItems.sort(java.util.Comparator.comparingInt((ItemStack c) -> (int) matchedProvided.getCount(c)).reversed());
 +      ingredients.sort(java.util.Comparator.comparingInt((Ingredient c) -> (int) matchedIngredients.getCount(c)));
 +
@@ -114,21 +114,21 @@
 +         }
 +         return false;
 +      }
-+      return isSimple ? ingredients.isEmpty() : net.minecraftforge.common.util.RecipeMatcher.findMatches(inputs,  this.field_77579_b) != null;
++      return isSimple ? ingredients.isEmpty() : net.minecraftforge.common.util.RecipeMatcher.findMatches(inputs,  this.ingredients) != null;
 +      // Paper end
     }
  
-    public ItemStack func_77572_b(CraftingInventory p_77572_1_) {
+    public ItemStack assemble(CraftingInventory p_77572_1_) {
 @@ -68,14 +_,15 @@
-       return p_194133_1_ * p_194133_2_ >= this.field_77579_b.size();
+       return p_194133_1_ * p_194133_2_ >= this.ingredients.size();
     }
  
 -   public static class Serializer implements IRecipeSerializer<ShapelessRecipe> {
 +   public static class Serializer extends net.minecraftforge.registries.ForgeRegistryEntry<IRecipeSerializer<?>> implements IRecipeSerializer<ShapelessRecipe> {
 +      private static final ResourceLocation NAME = new ResourceLocation("minecraft", "crafting_shapeless");
-       public ShapelessRecipe func_199425_a_(ResourceLocation p_199425_1_, JsonObject p_199425_2_) {
-          String s = JSONUtils.func_151219_a(p_199425_2_, "group", "");
-          NonNullList<Ingredient> nonnulllist = func_199568_a(JSONUtils.func_151214_t(p_199425_2_, "ingredients"));
+       public ShapelessRecipe fromJson(ResourceLocation p_199425_1_, JsonObject p_199425_2_) {
+          String s = JSONUtils.getAsString(p_199425_2_, "group", "");
+          NonNullList<Ingredient> nonnulllist = itemsFromJson(JSONUtils.getAsJsonArray(p_199425_2_, "ingredients"));
           if (nonnulllist.isEmpty()) {
              throw new JsonParseException("No ingredients for shapeless recipe");
 -         } else if (nonnulllist.size() > 9) {
@@ -136,5 +136,5 @@
 +         } else if (nonnulllist.size() > ShapedRecipe.MAX_WIDTH * ShapedRecipe.MAX_HEIGHT) {
 +            throw new JsonParseException("Too many ingredients for shapeless recipe the max is " + (ShapedRecipe.MAX_WIDTH * ShapedRecipe.MAX_HEIGHT));
           } else {
-             ItemStack itemstack = ShapedRecipe.func_199798_a(JSONUtils.func_152754_s(p_199425_2_, "result"));
+             ItemStack itemstack = ShapedRecipe.itemFromJson(JSONUtils.getAsJsonObject(p_199425_2_, "result"));
              return new ShapelessRecipe(p_199425_1_, s, itemstack, nonnulllist);

@@ -7,7 +7,7 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftMerchant;
  
  public interface IMerchant {
-    void func_70932_a_(@Nullable PlayerEntity p_70932_1_);
+    void setTradingPlayer(@Nullable PlayerEntity p_70932_1_);
 @@ -55,4 +_,6 @@
        }
  

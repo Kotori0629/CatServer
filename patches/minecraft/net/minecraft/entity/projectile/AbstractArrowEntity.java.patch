@@ -20,98 +20,98 @@
 +import org.bukkit.event.player.PlayerPickupArrowEvent;
  
  public abstract class AbstractArrowEntity extends ProjectileEntity {
-    private static final DataParameter<Byte> field_184554_g = EntityDataManager.func_187226_a(AbstractArrowEntity.class, DataSerializers.field_187191_a);
-    private static final DataParameter<Byte> field_213876_as = EntityDataManager.func_187226_a(AbstractArrowEntity.class, DataSerializers.field_187191_a);
+    private static final DataParameter<Byte> ID_FLAGS = EntityDataManager.defineId(AbstractArrowEntity.class, DataSerializers.BYTE);
+    private static final DataParameter<Byte> PIERCE_LEVEL = EntityDataManager.defineId(AbstractArrowEntity.class, DataSerializers.BYTE);
     @Nullable
-    private BlockState field_195056_av;
--   protected boolean field_70254_i;
-+   public boolean field_70254_i;
-    protected int field_184552_b;
-    public AbstractArrowEntity.PickupStatus field_70251_a = AbstractArrowEntity.PickupStatus.DISALLOWED;
-    public int field_70249_b;
--   private int field_70252_j;
-+   public int field_70252_j;
-    private double field_70255_ao = 2.0D;
--   private int field_70256_ap;
-+   public int field_70256_ap;
-    private SoundEvent field_213877_ay = this.func_213867_k();
-    private IntOpenHashSet field_213878_az;
-    private List<Entity> field_213875_aA;
+    private BlockState lastState;
+-   protected boolean inGround;
++   public boolean inGround;
+    protected int inGroundTime;
+    public AbstractArrowEntity.PickupStatus pickup = AbstractArrowEntity.PickupStatus.DISALLOWED;
+    public int shakeTime;
+-   private int life;
++   public int life;
+    private double baseDamage = 2.0D;
+-   private int knockback;
++   public int knockback;
+    private SoundEvent soundEvent = this.getDefaultHitGroundSoundEvent();
+    private IntOpenHashSet piercingIgnoreEntityIds;
+    private List<Entity> piercedAndKilledEntities;
 @@ -130,7 +_,7 @@
  
-       BlockPos blockpos = this.func_233580_cy_();
-       BlockState blockstate = this.field_70170_p.func_180495_p(blockpos);
--      if (!blockstate.func_196958_f() && !flag) {
-+      if (!blockstate.isAir(this.field_70170_p, blockpos) && !flag) {
-          VoxelShape voxelshape = blockstate.func_196952_d(this.field_70170_p, blockpos);
-          if (!voxelshape.func_197766_b()) {
-             Vector3d vector3d1 = this.func_213303_ch();
+       BlockPos blockpos = this.blockPosition();
+       BlockState blockstate = this.level.getBlockState(blockpos);
+-      if (!blockstate.isAir() && !flag) {
++      if (!blockstate.isAir(this.level, blockpos) && !flag) {
+          VoxelShape voxelshape = blockstate.getCollisionShape(this.level, blockpos);
+          if (!voxelshape.isEmpty()) {
+             Vector3d vector3d1 = this.position();
 @@ -161,6 +_,7 @@
  
-          ++this.field_184552_b;
+          ++this.inGroundTime;
        } else {
-+         if (field_70173_aa > 200) this.tickDespawnCounter(); // Paper - tick despawnCounter regardless after 10 seconds
-          this.field_184552_b = 0;
-          Vector3d vector3d2 = this.func_213303_ch();
-          Vector3d vector3d3 = vector3d2.func_178787_e(vector3d);
++         if (tickCount > 200) this.tickDespawnCounter(); // Paper - tick despawnCounter regardless after 10 seconds
+          this.inGroundTime = 0;
+          Vector3d vector3d2 = this.position();
+          Vector3d vector3d3 = vector3d2.add(vector3d);
 @@ -184,8 +_,8 @@
                 }
              }
  
 -            if (raytraceresult != null && !flag) {
--               this.func_70227_a(raytraceresult);
-+            if (raytraceresult != null && raytraceresult.func_216346_c() != RayTraceResult.Type.MISS && !flag && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
+-               this.onHit(raytraceresult);
++            if (raytraceresult != null && raytraceresult.getType() != RayTraceResult.Type.MISS && !flag && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
 +               this.preOnHit(raytraceresult);
-                this.field_70160_al = true;
+                this.hasImpulse = true;
              }
  
 @@ -260,9 +_,10 @@
  
     }
  
-+   protected final void tickDespawnCounter() { this.func_225516_i_(); } // Paper - OBFHELPER
-    protected void func_225516_i_() {
-       ++this.field_70252_j;
--      if (this.field_70252_j >= 1200) {
-+      if (this.field_70252_j >= ((this instanceof TridentEntity) ? field_70170_p.spigotConfig.tridentDespawnRate : field_70170_p.spigotConfig.arrowDespawnRate)) { // Spigot
-          this.func_70106_y();
++   protected final void tickDespawnCounter() { this.tickDespawn(); } // Paper - OBFHELPER
+    protected void tickDespawn() {
+       ++this.life;
+-      if (this.life >= 1200) {
++      if (this.life >= ((this instanceof TridentEntity) ? level.spigotConfig.tridentDespawnRate : level.spigotConfig.arrowDespawnRate)) { // Spigot
+          this.remove();
        }
  
 @@ -320,7 +_,15 @@
-       boolean flag = entity.func_200600_R() == EntityType.field_200803_q;
-       int k = entity.func_223314_ad();
-       if (this.func_70027_ad() && !flag) {
--         entity.func_70015_d(5);
+       boolean flag = entity.getType() == EntityType.ENDERMAN;
+       int k = entity.getRemainingFireTicks();
+       if (this.isOnFire() && !flag) {
+-         entity.setSecondsOnFire(5);
 +         // CraftBukkit start
 +         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
 +         Bukkit.getPluginManager().callEvent(combustEvent);
 +         if (!combustEvent.isCancelled()) {
 +            entity.putCallCombustEvent(false);
-+            entity.func_70015_d(combustEvent.getDuration());
++            entity.setSecondsOnFire(combustEvent.getDuration());
 +            entity.putCallCombustEvent(true);
 +         }
 +         // CraftBukkit end
        }
  
-       if (entity.func_70097_a(damagesource, (float)i)) {
+       if (entity.hurt(damagesource, (float)i)) {
 @@ -477,8 +_,20 @@
  
-    public void func_70100_b_(PlayerEntity p_70100_1_) {
-       if (!this.field_70170_p.field_72995_K && (this.field_70254_i || this.func_203047_q()) && this.field_70249_b <= 0) {
+    public void playerTouch(PlayerEntity p_70100_1_) {
+       if (!this.level.isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
 +         // CraftBukkit start
-+         ItemStack itemstack = this.func_184550_j();
-+         if (this.field_70251_a == PickupStatus.ALLOWED && !itemstack.func_190926_b() && p_70100_1_.field_71071_by.canHold(itemstack) > 0) {
-+            ItemEntity item = new ItemEntity(this.field_70170_p, this.func_226277_ct_(), this.func_226278_cu_(), this.func_226281_cx_(), itemstack);
-+            PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((Player)p_70100_1_.getBukkitEntity(), new CraftItem(this.field_70170_p.getCBServer(), this, item), (AbstractArrow)this.getBukkitEntity());
-+            this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++         ItemStack itemstack = this.getPickupItem();
++         if (this.pickup == PickupStatus.ALLOWED && !itemstack.isEmpty() && p_70100_1_.inventory.canHold(itemstack) > 0) {
++            ItemEntity item = new ItemEntity(this.level, this.getX(), this.getY(), this.getZ(), itemstack);
++            PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((Player)p_70100_1_.getBukkitEntity(), new CraftItem(this.level.getCBServer(), this, item), (AbstractArrow)this.getBukkitEntity());
++            this.level.getCBServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +               return;
 +            }
-+            itemstack = item.func_92059_d();
++            itemstack = item.getItem();
 +         }
-          boolean flag = this.field_70251_a == AbstractArrowEntity.PickupStatus.ALLOWED || this.field_70251_a == AbstractArrowEntity.PickupStatus.CREATIVE_ONLY && p_70100_1_.field_71075_bZ.field_75098_d || this.func_203047_q() && this.func_234616_v_().func_110124_au() == p_70100_1_.func_110124_au();
--         if (this.field_70251_a == AbstractArrowEntity.PickupStatus.ALLOWED && !p_70100_1_.field_71071_by.func_70441_a(this.func_184550_j())) {
-+         if (this.field_70251_a == AbstractArrowEntity.PickupStatus.ALLOWED && !p_70100_1_.field_71071_by.func_70441_a(itemstack)) {
+          boolean flag = this.pickup == AbstractArrowEntity.PickupStatus.ALLOWED || this.pickup == AbstractArrowEntity.PickupStatus.CREATIVE_ONLY && p_70100_1_.abilities.instabuild || this.isNoPhysics() && this.getOwner().getUUID() == p_70100_1_.getUUID();
+-         if (this.pickup == AbstractArrowEntity.PickupStatus.ALLOWED && !p_70100_1_.inventory.add(this.getPickupItem())) {
++         if (this.pickup == AbstractArrowEntity.PickupStatus.ALLOWED && !p_70100_1_.inventory.add(itemstack)) {
 +            // CraftBukkit end
              flag = false;
           }

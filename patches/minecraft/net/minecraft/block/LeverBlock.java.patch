@@ -7,14 +7,14 @@
 +import org.bukkit.event.block.BlockRedstoneEvent;
  
  public class LeverBlock extends HorizontalFaceBlock {
-    public static final BooleanProperty field_176359_b = BlockStateProperties.field_208194_u;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 @@ -81,6 +_,18 @@
  
           return ActionResultType.SUCCESS;
        } else {
 +         // CraftBukkit start - Interact Lever
-+         boolean powered = p_225533_1_.func_177229_b(LeverBlock.field_176359_b); // Old powered state
-+         org.bukkit.block.Block block = p_225533_2_.getWorld().getBlockAt(p_225533_3_.func_177958_n(), p_225533_3_.func_177956_o(), p_225533_3_.func_177952_p());
++         boolean powered = p_225533_1_.getValue(LeverBlock.POWERED); // Old powered state
++         org.bukkit.block.Block block = p_225533_2_.getWorld().getBlockAt(p_225533_3_.getX(), p_225533_3_.getY(), p_225533_3_.getZ());
 +         int old = (powered) ? 15 : 0;
 +         int current = (!powered) ? 15 : 0;
 +         BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
@@ -24,6 +24,6 @@
 +         }
 +         // CraftBukkit end
 +
-          BlockState blockstate = this.func_226939_d_(p_225533_1_, p_225533_2_, p_225533_3_);
-          float f = blockstate.func_177229_b(field_176359_b) ? 0.6F : 0.5F;
-          p_225533_2_.func_184133_a((PlayerEntity)null, p_225533_3_, SoundEvents.field_187750_dc, SoundCategory.BLOCKS, 0.3F, f);
+          BlockState blockstate = this.pull(p_225533_1_, p_225533_2_, p_225533_3_);
+          float f = blockstate.getValue(POWERED) ? 0.6F : 0.5F;
+          p_225533_2_.playSound((PlayerEntity)null, p_225533_3_, SoundEvents.LEVER_CLICK, SoundCategory.BLOCKS, 0.3F, f);

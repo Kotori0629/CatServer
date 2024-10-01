@@ -16,28 +16,28 @@
 +import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
  
  public class AreaEffectCloudEntity extends Entity {
-    private static final Logger field_195060_a = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 @@ -39,15 +_,15 @@
-    private static final DataParameter<Boolean> field_184500_c = EntityDataManager.func_187226_a(AreaEffectCloudEntity.class, DataSerializers.field_187198_h);
-    private static final DataParameter<IParticleData> field_184501_d = EntityDataManager.func_187226_a(AreaEffectCloudEntity.class, DataSerializers.field_198166_i);
-    private Potion field_184502_e = Potions.field_185229_a;
--   private final List<EffectInstance> field_184503_f = Lists.newArrayList();
-+   public final List<EffectInstance> field_184503_f = Lists.newArrayList(); // private->public CraftBukkit
-    private final Map<Entity, Integer> field_184504_g = Maps.newHashMap();
-    private int field_184505_h = 600;
--   private int field_184506_as = 20;
--   private int field_184507_at = 20;
-+   public int field_184506_as = 20; // private->public CraftBukkit
-+   public int field_184507_at = 20; // private->public CraftBukkit
-    private boolean field_184508_au;
--   private int field_184509_av;
--   private float field_184510_aw;
--   private float field_184511_ax;
-+   public int field_184509_av; // private->public CraftBukkit
-+   public float field_184510_aw; // private->public CraftBukkit
-+   public float field_184511_ax; // private->public CraftBukkit
-    private LivingEntity field_184512_ay;
-    private UUID field_184513_az;
+    private static final DataParameter<Boolean> DATA_WAITING = EntityDataManager.defineId(AreaEffectCloudEntity.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<IParticleData> DATA_PARTICLE = EntityDataManager.defineId(AreaEffectCloudEntity.class, DataSerializers.PARTICLE);
+    private Potion potion = Potions.EMPTY;
+-   private final List<EffectInstance> effects = Lists.newArrayList();
++   public final List<EffectInstance> effects = Lists.newArrayList(); // private->public CraftBukkit
+    private final Map<Entity, Integer> victims = Maps.newHashMap();
+    private int duration = 600;
+-   private int waitTime = 20;
+-   private int reapplicationDelay = 20;
++   public int waitTime = 20; // private->public CraftBukkit
++   public int reapplicationDelay = 20; // private->public CraftBukkit
+    private boolean fixedColor;
+-   private int durationOnUse;
+-   private float radiusOnUse;
+-   private float radiusPerTick;
++   public int durationOnUse; // private->public CraftBukkit
++   public float radiusOnUse; // private->public CraftBukkit
++   public float radiusPerTick; // private->public CraftBukkit
+    private LivingEntity owner;
+    private UUID ownerUUID;
  
 @@ -113,6 +_,22 @@
  
@@ -45,61 +45,61 @@
  
 +   // CraftBukkit start accessor methods
 +   public void refreshEffects() {
-+      if (!this.field_184508_au) {
-+         this.func_184212_Q().func_187227_b(AreaEffectCloudEntity.field_184499_b, PotionUtils.func_185181_a(PotionUtils.func_185186_a(this.field_184502_e, this.field_184503_f)));
++      if (!this.fixedColor) {
++         this.getEntityData().set(AreaEffectCloudEntity.DATA_COLOR, PotionUtils.getColor(PotionUtils.getAllEffects(this.potion, this.effects)));
 +      }
 +   }
 +
 +   public String getTypeCB() {
-+      return ((ResourceLocation)Registry.field_212621_j.func_177774_c(this.field_184502_e)).toString();
++      return ((ResourceLocation)Registry.POTION.getKey(this.potion)).toString();
 +   }
 +
 +   public void setType(final String string) {
-+      this.func_184484_a(Registry.field_212621_j.func_82594_a(new ResourceLocation(string)));
++      this.setPotion(Registry.POTION.get(new ResourceLocation(string)));
 +   }
 +   // CraftBukkit end
 +
-    public int func_184492_k() {
-       return this.func_184212_Q().func_187225_a(field_184499_b);
+    public int getColor() {
+       return this.getEntityData().get(DATA_COLOR);
     }
 @@ -146,10 +_,27 @@
-       this.field_184505_h = p_184486_1_;
+       this.duration = p_184486_1_;
     }
  
 +   // Spigot start - copied from below
 +   @Override
 +   public void inactiveTick() {
 +      super.inactiveTick();
-+      if (this.field_70173_aa >= this.field_184506_as + this.field_184505_h) {
-+         this.func_70106_y();
++      if (this.tickCount >= this.waitTime + this.duration) {
++         this.remove();
 +         return;
 +      }
 +   }
 +   // Spigot end
 +
-    public void func_70071_h_() {
-       super.func_70071_h_();
-       boolean flag = this.func_184497_n();
-       float f = this.func_184490_j();
+    public void tick() {
+       super.tick();
+       boolean flag = this.isWaiting();
+       float f = this.getRadius();
 +      // Paper start - fix MC-114618
 +      if (f < 0.0F) {
-+         this.func_70106_y();
++         this.remove();
 +         return;
 +      }
 +      // Paper end
-       if (this.field_70170_p.field_72995_K) {
-          IParticleData iparticledata = this.func_195058_l();
+       if (this.level.isClientSide) {
+          IParticleData iparticledata = this.getParticle();
           if (flag) {
 @@ -217,6 +_,7 @@
-          if (this.field_70173_aa % 5 == 0) {
-             Iterator<Entry<Entity, Integer>> iterator = this.field_184504_g.entrySet().iterator();
+          if (this.tickCount % 5 == 0) {
+             Iterator<Entry<Entity, Integer>> iterator = this.victims.entrySet().iterator();
  
 +            List<org.bukkit.entity.LivingEntity> entities = new java.util.ArrayList<org.bukkit.entity.LivingEntity>(); // CraftBukkit
              while(iterator.hasNext()) {
                 Entry<Entity, Integer> entry = iterator.next();
-                if (this.field_70173_aa >= entry.getValue()) {
+                if (this.tickCount >= entry.getValue()) {
 @@ -242,13 +_,24 @@
-                         double d1 = livingentity.func_226281_cx_() - this.func_226281_cx_();
+                         double d1 = livingentity.getZ() - this.getZ();
                          double d2 = d0 * d0 + d1 * d1;
                          if (d2 <= (double)(f * f)) {
 +                           // CraftBukkit start
@@ -113,13 +113,13 @@
 +                        if(entity instanceof CraftLivingEntity){
 +                           LivingEntity livingentity = ((CraftLivingEntity) entity).getHandle();
 +                           // CraftBukkit end
-                            this.field_184504_g.put(livingentity, this.field_70173_aa + this.field_184507_at);
+                            this.victims.put(livingentity, this.tickCount + this.reapplicationDelay);
  
                             for(EffectInstance effectinstance : list) {
-                               if (effectinstance.func_188419_a().func_76403_b()) {
-                                  effectinstance.func_188419_a().func_180793_a(this, this.func_184494_w(), livingentity, effectinstance.func_76458_c(), 0.5D);
+                               if (effectinstance.getEffect().isInstantenous()) {
+                                  effectinstance.getEffect().applyInstantenousEffect(this, this.getOwner(), livingentity, effectinstance.getAmplifier(), 0.5D);
                                } else {
--                                 livingentity.func_195064_c(new EffectInstance(effectinstance));
+-                                 livingentity.addEffect(new EffectInstance(effectinstance));
 +                                 livingentity.addEffect(new EffectInstance(effectinstance), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
                                }
                             }

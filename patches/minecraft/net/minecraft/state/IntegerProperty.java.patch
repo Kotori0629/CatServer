@@ -2,7 +2,7 @@
 +++ b/net/minecraft/state/IntegerProperty.java
 @@ -9,8 +_,15 @@
  public class IntegerProperty extends Property<Integer> {
-    private final ImmutableSet<Integer> field_177720_a;
+    private final ImmutableSet<Integer> values;
  
 +   // CraftBukkit start
 +   public final int min;

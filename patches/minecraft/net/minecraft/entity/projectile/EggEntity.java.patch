@@ -30,8 +30,8 @@
     public EggEntity(EntityType<? extends EggEntity> p_i50154_1_, World p_i50154_2_) {
 @@ -46,19 +_,51 @@
  
-    protected void func_70227_a(RayTraceResult p_70227_1_) {
-       super.func_70227_a(p_70227_1_);
+    protected void onHit(RayTraceResult p_70227_1_) {
+       super.onHit(p_70227_1_);
 +
 +      int dummy1 = 0; int dummy2 = 0; ChickenEntity hatchingEntity;
 +      dummy1++; // do not allow the compiler to cut these fields off
@@ -39,31 +39,31 @@
 +
 +
 +
-       if (!this.field_70170_p.field_72995_K) {
--         if (this.field_70146_Z.nextInt(8) == 0) {
+       if (!this.level.isClientSide) {
+-         if (this.random.nextInt(8) == 0) {
 -            int i = 1;
-+         boolean hatching = this.field_70146_Z.nextInt(8) == 0; // CraftBukkit
++         boolean hatching = this.random.nextInt(8) == 0; // CraftBukkit
 +         if (true) {
 +            byte i = 1;
-             if (this.field_70146_Z.nextInt(32) == 0) {
+             if (this.random.nextInt(32) == 0) {
                 i = 4;
              }
  
 -            for(int j = 0; j < i; ++j) {
--               ChickenEntity chickenentity = EntityType.field_200795_i.func_200721_a(this.field_70170_p);
--               chickenentity.func_70873_a(-24000);
--               chickenentity.func_70012_b(this.func_226277_ct_(), this.func_226278_cu_(), this.func_226281_cx_(), this.field_70177_z, 0.0F);
--               this.field_70170_p.func_217376_c(chickenentity);
+-               ChickenEntity chickenentity = EntityType.CHICKEN.create(this.level);
+-               chickenentity.setAge(-24000);
+-               chickenentity.moveTo(this.getX(), this.getY(), this.getZ(), this.yRot, 0.0F);
+-               this.level.addFreshEntity(chickenentity);
 -            }
 +            // CraftBukkit start
 +            if (!hatching) {
 +               i = 0;
 +            }
 +            org.bukkit.entity.EntityType hatchingType = org.bukkit.entity.EntityType.CHICKEN;
-+            Entity thrower = this.func_234616_v_();
++            Entity thrower = this.getOwner();
 +            if (thrower instanceof ServerPlayerEntity) {
 +               PlayerEggThrowEvent event = new PlayerEggThrowEvent((Player) thrower.getBukkitEntity(), (Egg) this.getBukkitEntity(), hatching, i, hatchingType);
-+               this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++               this.level.getCBServer().getPluginManager().callEvent(event);
 +
 +               i = event.getNumHatches();
 +               hatching = event.isHatching();
@@ -72,19 +72,19 @@
 +
 +            if (hatching) {
 +               for (int j = 0; j < i; j++) {
-+                  hatchingEntity = (ChickenEntity) field_70170_p.getWorld().createEntity(new Location(field_70170_p.getWorld(), this.func_226277_ct_(), this.func_226278_cu_(), this.func_226281_cx_(), this.field_70177_z, 0), hatchingType.getEntityClass());
++                  hatchingEntity = (ChickenEntity) level.getWorld().createEntity(new Location(level.getWorld(), this.getX(), this.getY(), this.getZ(), this.yRot, 0), hatchingType.getEntityClass());
 +                  if (hatchingEntity.getBukkitEntity() instanceof Ageable) {
 +                     ((Ageable) hatchingEntity.getBukkitEntity()).setBaby();
 +                  }
 +                  // Fixed Peukui Startup
-+                  if (this.field_70170_p instanceof ServerWorld){
-+                     ((ServerWorld) this.field_70170_p).pehkuiSpawnReason = SpawnReason.EGG;
-+                     field_70170_p.func_217376_c(hatchingEntity);
-+                     ((ServerWorld) this.field_70170_p).pehkuiSpawnReason = SpawnReason.DEFAULT;
++                  if (this.level instanceof ServerWorld){
++                     ((ServerWorld) this.level).pehkuiSpawnReason = SpawnReason.EGG;
++                     level.addFreshEntity(hatchingEntity);
++                     ((ServerWorld) this.level).pehkuiSpawnReason = SpawnReason.DEFAULT;
 +                  }
 +               }
 +            }
 +            // CraftBukkit end
           }
  
-          this.field_70170_p.func_72960_a(this, (byte)3);
+          this.level.broadcastEntityEvent(this, (byte)3);

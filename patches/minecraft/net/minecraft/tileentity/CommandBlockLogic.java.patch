@@ -7,16 +7,16 @@
 +import org.bukkit.command.CommandSender;
  
  public abstract class CommandBlockLogic implements ICommandSource {
-    private static final SimpleDateFormat field_145766_a = new SimpleDateFormat("HH:mm:ss");
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
 @@ -34,6 +_,11 @@
-    private ITextComponent field_145762_d;
-    private String field_145763_e = "";
-    private ITextComponent field_145761_f = field_226655_c_;
+    private ITextComponent lastOutput;
+    private String command = "";
+    private ITextComponent name = DEFAULT_NAME;
 +
 +   // CraftBukkit start
 +   @Override
 +   public abstract CommandSender getBukkitSender(CommandSource wrapper);
 +   // CraftBukkit end
  
-    public int func_145760_g() {
-       return this.field_145764_b;
+    public int getSuccessCount() {
+       return this.successCount;

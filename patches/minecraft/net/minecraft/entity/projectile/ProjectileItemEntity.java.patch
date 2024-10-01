@@ -1,28 +1,28 @@
 --- a/net/minecraft/entity/projectile/ProjectileItemEntity.java
 +++ b/net/minecraft/entity/projectile/ProjectileItemEntity.java
 @@ -36,7 +_,9 @@
-    public void func_213884_b(ItemStack p_213884_1_) {
-       if (p_213884_1_.func_77973_b() != this.func_213885_i() || p_213884_1_.func_77942_o()) {
-          this.func_184212_Q().func_187227_b(field_213886_e, Util.func_200696_a(p_213884_1_.func_77946_l(), (p_213883_0_) -> {
--            p_213883_0_.func_190920_e(1);
-+            if (!p_213883_0_.func_190926_b()) {
-+               p_213883_0_.func_190920_e(1); // CraftBukkit
+    public void setItem(ItemStack p_213884_1_) {
+       if (p_213884_1_.getItem() != this.getDefaultItem() || p_213884_1_.hasTag()) {
+          this.getEntityData().set(DATA_ITEM_STACK, Util.make(p_213884_1_.copy(), (p_213883_0_) -> {
+-            p_213883_0_.setCount(1);
++            if (!p_213883_0_.isEmpty()) {
++               p_213883_0_.setCount(1); // CraftBukkit
 +            }
           }));
        }
  
 @@ -44,7 +_,13 @@
  
-    protected abstract Item func_213885_i();
+    protected abstract Item getDefaultItem();
  
--   protected ItemStack func_213882_k() {
+-   protected ItemStack getItemRaw() {
 +   // CraftBukkit start
 +   public Item getDefaultItemPublic() {
-+      return func_213885_i();
++      return getDefaultItem();
 +   }
 +   // CraftBukkit end
 +
-+   public ItemStack func_213882_k() {
-       return this.func_184212_Q().func_187225_a(field_213886_e);
++   public ItemStack getItemRaw() {
+       return this.getEntityData().get(DATA_ITEM_STACK);
     }
  

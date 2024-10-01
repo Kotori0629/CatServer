@@ -8,23 +8,23 @@
 +import org.bukkit.craftbukkit.v1_16_R3.entity.CraftMinecartCommand;
  
  public class CommandBlockMinecartEntity extends AbstractMinecartEntity {
--   private static final DataParameter<String> field_184273_a = EntityDataManager.func_187226_a(CommandBlockMinecartEntity.class, DataSerializers.field_187194_d);
-+   public static final DataParameter<String> field_184273_a = EntityDataManager.func_187226_a(CommandBlockMinecartEntity.class, DataSerializers.field_187194_d); // private->public CraftBukkit
-    private static final DataParameter<ITextComponent> field_184274_b = EntityDataManager.func_187226_a(CommandBlockMinecartEntity.class, DataSerializers.field_187195_e);
-    private final CommandBlockLogic field_145824_a = new CommandBlockMinecartEntity.MinecartCommandLogic();
-    private int field_145823_b;
+-   private static final DataParameter<String> DATA_ID_COMMAND_NAME = EntityDataManager.defineId(CommandBlockMinecartEntity.class, DataSerializers.STRING);
++   public static final DataParameter<String> DATA_ID_COMMAND_NAME = EntityDataManager.defineId(CommandBlockMinecartEntity.class, DataSerializers.STRING); // private->public CraftBukkit
+    private static final DataParameter<ITextComponent> DATA_ID_LAST_OUTPUT = EntityDataManager.defineId(CommandBlockMinecartEntity.class, DataSerializers.COMPONENT);
+    private final CommandBlockLogic commandBlock = new CommandBlockMinecartEntity.MinecartCommandLogic();
+    private int lastActivated;
 @@ -73,6 +_,8 @@
     }
  
-    public ActionResultType func_184230_a(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-+      ActionResultType ret = super.func_184230_a(p_184230_1_, p_184230_2_);
-+      if (ret.func_226246_a_()) return ret;
-       return this.field_145824_a.func_175574_a(p_184230_1_);
+    public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
++      ActionResultType ret = super.interact(p_184230_1_, p_184230_2_);
++      if (ret.consumesAction()) return ret;
+       return this.commandBlock.usedBy(p_184230_1_);
     }
  
 @@ -116,5 +_,12 @@
-       public CommandSource func_195042_h() {
-          return new CommandSource(this, CommandBlockMinecartEntity.this.func_213303_ch(), CommandBlockMinecartEntity.this.func_189653_aC(), this.func_195043_d(), 2, this.func_207404_l().getString(), CommandBlockMinecartEntity.this.func_145748_c_(), this.func_195043_d().func_73046_m(), CommandBlockMinecartEntity.this);
+       public CommandSource createCommandSourceStack() {
+          return new CommandSource(this, CommandBlockMinecartEntity.this.position(), CommandBlockMinecartEntity.this.getRotationVector(), this.getLevel(), 2, this.getName().getString(), CommandBlockMinecartEntity.this.getDisplayName(), this.getLevel().getServer(), CommandBlockMinecartEntity.this);
        }
 +
 +      // CraftBukkit start

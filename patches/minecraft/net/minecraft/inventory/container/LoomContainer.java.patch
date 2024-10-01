@@ -28,35 +28,35 @@
 +      if (bukkitEntity != null) {
 +         return bukkitEntity;
 +      }
-+      CraftInventoryLoom inventory = new CraftInventoryLoom(this.field_217040_j, this.field_217041_k);
++      CraftInventoryLoom inventory = new CraftInventoryLoom(this.inputContainer, this.outputContainer);
 +      bukkitEntity = new CraftInventoryView(this.player, inventory, this);
 +      return bukkitEntity;
 +   }
 +   // CraftBukkit stop
 +
-    private final IWorldPosCallable field_217033_c;
-    private final IntReferenceHolder field_217034_d = IntReferenceHolder.func_221492_a();
-    private Runnable field_217035_e = () -> {
+    private final IWorldPosCallable access;
+    private final IntReferenceHolder selectedBannerPatternIndex = IntReferenceHolder.standalone();
+    private Runnable slotUpdateListener = () -> {
 @@ -36,12 +_,24 @@
-          LoomContainer.this.func_75130_a(this);
-          LoomContainer.this.field_217035_e.run();
+          LoomContainer.this.slotsChanged(this);
+          LoomContainer.this.slotUpdateListener.run();
        }
 +      // CraftBukkit start
 +      @Override
 +      public Location getLocation() {
-+         return field_217040_j.getLocation();
++         return inputContainer.getLocation();
 +      }
 +      // CraftBukkit end
     };
-    private final IInventory field_217041_k = new Inventory(1) {
-       public void func_70296_d() {
-          super.func_70296_d();
-          LoomContainer.this.field_217035_e.run();
+    private final IInventory outputContainer = new Inventory(1) {
+       public void setChanged() {
+          super.setChanged();
+          LoomContainer.this.slotUpdateListener.run();
        }
 +      // CraftBukkit start
 +      @Override
 +      public Location getLocation() {
-+         return field_217041_k.getLocation();
++         return outputContainer.getLocation();
 +      }
 +      // CraftBukkit end
     };
@@ -65,22 +65,22 @@
 @@ -101,6 +_,7 @@
        }
  
-       this.func_216958_a(this.field_217034_d);
-+      player = (Player) p_i50074_2_.field_70458_d.getBukkitEntity(); // CraftBukkit
+       this.addDataSlot(this.selectedBannerPatternIndex);
++      player = (Player) p_i50074_2_.player.getBukkitEntity(); // CraftBukkit
     }
  
     @OnlyIn(Dist.CLIENT)
 @@ -109,12 +_,35 @@
     }
  
-    public boolean func_75145_c(PlayerEntity p_75145_1_) {
+    public boolean stillValid(PlayerEntity p_75145_1_) {
 +      if (!this.checkReachable) return true; // CraftBukkit
-       return func_216963_a(this.field_217033_c, p_75145_1_, Blocks.field_222421_lJ);
+       return stillValid(this.access, p_75145_1_, Blocks.LOOM);
     }
  
-    public boolean func_75140_a(PlayerEntity p_75140_1_, int p_75140_2_) {
-       if (p_75140_2_ > 0 && p_75140_2_ <= BannerPattern.field_222481_P) {
--         this.field_217034_d.func_221494_a(p_75140_2_);
+    public boolean clickMenuButton(PlayerEntity p_75140_1_, int p_75140_2_) {
+       if (p_75140_2_ > 0 && p_75140_2_ <= BannerPattern.AVAILABLE_PATTERNS) {
+-         this.selectedBannerPatternIndex.set(p_75140_2_);
 +         //this.selectedBannerPatternIndex.set(p_75140_2_);
 +         // Paper start
 +         int ordinal = p_75140_2_;
@@ -88,7 +88,7 @@
 +                 (Player) p_75140_1_.getBukkitEntity(),
 +                 (CraftInventoryLoom) getBukkitView().getTopInventory(),
 +                 org.bukkit.block.banner.PatternType.getByIdentifier(
-+                         BannerPattern.values()[p_75140_2_].func_190993_b())
++                         BannerPattern.values()[p_75140_2_].getHashname())
 +         );
 +         Bukkit.getServer().getPluginManager().callEvent(event);
 +         if (event.isCancelled()) {
@@ -96,21 +96,21 @@
 +            return false;
 +         }
 +         for (BannerPattern nms : BannerPattern.values()) {
-+            if (event.getPatternType().getIdentifier().equals(nms.func_190993_b())) {
++            if (event.getPatternType().getIdentifier().equals(nms.getHashname())) {
 +               ordinal = nms.ordinal();
 +               break;
 +            }
 +         }
 +         ((Player) p_75140_1_.getBukkitEntity()).updateInventory();
-+         this.field_217034_d.func_221494_a(ordinal);
++         this.selectedBannerPatternIndex.set(ordinal);
 +         // Paper end
-          this.func_217031_j();
+          this.setupResultSlot();
           return true;
        } else {
 @@ -224,6 +_,11 @@
              ListNBT listnbt;
-             if (compoundnbt.func_150297_b("Patterns", 9)) {
-                listnbt = compoundnbt.func_150295_c("Patterns", 10);
+             if (compoundnbt.contains("Patterns", 9)) {
+                listnbt = compoundnbt.getList("Patterns", 10);
 +               // CraftBukkit start
 +               while (listnbt.size() > 20) {
 +                  listnbt.remove(20);
@@ -118,4 +118,4 @@
 +               // CraftBukkit end
              } else {
                 listnbt = new ListNBT();
-                compoundnbt.func_218657_a("Patterns", listnbt);
+                compoundnbt.put("Patterns", listnbt);

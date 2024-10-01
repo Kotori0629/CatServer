@@ -10,16 +10,16 @@
  import java.util.concurrent.CompletableFuture;
 @@ -37,7 +_,7 @@
  public class CommandSource implements ISuggestionProvider {
-    public static final SimpleCommandExceptionType field_197039_a = new SimpleCommandExceptionType(new TranslationTextComponent("permissions.requires.player"));
-    public static final SimpleCommandExceptionType field_197040_b = new SimpleCommandExceptionType(new TranslationTextComponent("permissions.requires.entity"));
--   private final ICommandSource field_197041_c;
-+   public final ICommandSource field_197041_c;
-    private final Vector3d field_197042_d;
-    private final ServerWorld field_197043_e;
-    private final int field_197044_f;
+    public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(new TranslationTextComponent("permissions.requires.player"));
+    public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(new TranslationTextComponent("permissions.requires.entity"));
+-   private final ICommandSource source;
++   public final ICommandSource source;
+    private final Vector3d worldPosition;
+    private final ServerWorld level;
+    private final int permissionLevel;
 @@ -51,6 +_,8 @@
-    private final EntityAnchorArgument.Type field_201011_m;
-    private final Vector2f field_201012_n;
+    private final EntityAnchorArgument.Type anchor;
+    private final Vector2f rotation;
  
 +   public volatile CommandNode currentCommand; // CraftBukkit
 +
@@ -29,43 +29,43 @@
 @@ -142,9 +_,22 @@
     }
  
-    public boolean func_197034_c(int p_197034_1_) {
+    public boolean hasPermission(int p_197034_1_) {
 +      // CraftBukkit start
 +      CommandNode currentCommand = this.currentCommand;
 +      if (currentCommand != null) {
 +         return hasPermission(p_197034_1_, org.bukkit.craftbukkit.v1_16_R3.command.VanillaCommandWrapper.getPermission(currentCommand));
 +      }
 +      // CraftBukkit end
-       return this.field_197044_f >= p_197034_1_;
+       return this.permissionLevel >= p_197034_1_;
     }
  
 +   // CraftBukkit start
 +   public boolean hasPermission(int i, String bukkitPermission) {
 +      // World is null when loading functions
-+      return ((func_197023_e() == null || !func_197023_e().getCBServer().ignoreVanillaPermissions) && this.field_197044_f >= i) || getBukkitSender().hasPermission(bukkitPermission);
++      return ((getLevel() == null || !getLevel().getCBServer().ignoreVanillaPermissions) && this.permissionLevel >= i) || getBukkitSender().hasPermission(bukkitPermission);
 +   }
 +   // CraftBukkit end
 +
-    public Vector3d func_197036_d() {
-       return this.field_197042_d;
+    public Vector3d getPosition() {
+       return this.worldPosition;
     }
 @@ -207,7 +_,7 @@
           }
        }
  
--      if (this.field_197041_c != this.field_197047_i && this.field_197047_i.func_200252_aR().func_223586_b(GameRules.field_223608_k)) {
-+      if (this.field_197041_c != this.field_197047_i && this.field_197047_i.func_200252_aR().func_223586_b(GameRules.field_223608_k) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
-          this.field_197047_i.func_145747_a(itextcomponent, Util.field_240973_b_);
+-      if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
++      if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+          this.server.sendMessage(itextcomponent, Util.NIL_UUID);
        }
  
 @@ -254,4 +_,10 @@
-    public DynamicRegistries func_241861_q() {
-       return this.field_197047_i.func_244267_aX();
+    public DynamicRegistries registryAccess() {
+       return this.server.registryAccess();
     }
 +
 +   // CraftBukkit start
 +   public org.bukkit.command.CommandSender getBukkitSender() {
-+      return field_197041_c.getBukkitSender(this);
++      return source.getBukkitSender(this);
 +   }
 +   // CraftBukkit end
  }

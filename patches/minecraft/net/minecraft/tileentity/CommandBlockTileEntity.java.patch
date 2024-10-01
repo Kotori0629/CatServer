@@ -8,12 +8,12 @@
 +import org.bukkit.craftbukkit.v1_16_R3.command.CraftBlockCommandSender;
  
  public class CommandBlockTileEntity extends TileEntity {
-    private boolean field_184259_a;
+    private boolean powered;
 @@ -22,7 +_,14 @@
-    private boolean field_184261_g;
-    private boolean field_184262_h;
-    private final CommandBlockLogic field_145994_a = new CommandBlockLogic() {
--      public void func_145752_a(String p_145752_1_) {
+    private boolean conditionMet;
+    private boolean sendToClient;
+    private final CommandBlockLogic commandBlock = new CommandBlockLogic() {
+-      public void setCommand(String p_145752_1_) {
 +      // CraftBukkit start
 +       @Override
 +      public CommandSender getBukkitSender(CommandSource wrapper) {
@@ -21,7 +21,7 @@
 +       }
 +      // CraftBukkit end
 +
-+       public void func_145752_a(String p_145752_1_) {
-          super.func_145752_a(p_145752_1_);
-          CommandBlockTileEntity.this.func_70296_d();
++       public void setCommand(String p_145752_1_) {
+          super.setCommand(p_145752_1_);
+          CommandBlockTileEntity.this.setChanged();
        }

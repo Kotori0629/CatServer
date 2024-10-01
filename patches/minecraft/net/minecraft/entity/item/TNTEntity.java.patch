@@ -7,11 +7,11 @@
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
  
  public class TNTEntity extends Entity {
-    private static final DataParameter<Integer> field_184537_a = EntityDataManager.func_187226_a(TNTEntity.class, DataSerializers.field_187192_b);
+    private static final DataParameter<Integer> DATA_FUSE_ID = EntityDataManager.defineId(TNTEntity.class, DataSerializers.INT);
     @Nullable
--   private LivingEntity field_94084_b;
-+   public LivingEntity field_94084_b;
-    private int field_70516_a = 80;
+-   private LivingEntity owner;
++   public LivingEntity owner;
+    private int life = 80;
 +   public float yield = 4; // CraftBukkit - add field
 +   public boolean isIncendiary = false; // CraftBukkit - add field
  
@@ -20,39 +20,39 @@
 @@ -53,6 +_,7 @@
     }
  
-    public void func_70071_h_() {
-+      if (field_70170_p.spigotConfig.currentPrimedTnt++ > field_70170_p.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
-       if (!this.func_189652_ae()) {
-          this.func_213317_d(this.func_213322_ci().func_72441_c(0.0D, -0.04D, 0.0D));
+    public void tick() {
++      if (level.spigotConfig.currentPrimedTnt++ > level.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
+       if (!this.isNoGravity()) {
+          this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D));
        }
 @@ -65,10 +_,13 @@
  
-       --this.field_70516_a;
-       if (this.field_70516_a <= 0) {
--         this.func_70106_y();
+       --this.life;
+       if (this.life <= 0) {
+-         this.remove();
 +         // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
 +    //    this.remove();
-          if (!this.field_70170_p.field_72995_K) {
-             this.func_70515_d();
+          if (!this.level.isClientSide) {
+             this.explode();
           }
-+         this.func_70106_y();
++         this.remove();
 +         // CraftBukkit end
        } else {
-          this.func_233566_aG_();
-          if (this.field_70170_p.field_72995_K) {
+          this.updateInWaterStateAndDoFluidPushing();
+          if (this.level.isClientSide) {
 @@ -79,8 +_,13 @@
     }
  
-    protected void func_70515_d() {
+    protected void explode() {
 -      float f = 4.0F;
--      this.field_70170_p.func_217385_a(this, this.func_226277_ct_(), this.func_226283_e_(0.0625D), this.func_226281_cx_(), 4.0F, Explosion.Mode.BREAK);
+-      this.level.explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 4.0F, Explosion.Mode.BREAK);
 +      // CraftBukkit start
 +      ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
-+      this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++      this.level.getCBServer().getPluginManager().callEvent(event);
 +      if (!event.isCancelled()) {
-+         this.field_70170_p.func_217398_a(this, this.func_226277_ct_(), this.func_226283_e_(0.0625D), this.func_226281_cx_(), event.getRadius(), event.getFire(), Explosion.Mode.BREAK);
++         this.level.explode(this, this.getX(), this.getY(0.0625D), this.getZ(), event.getRadius(), event.getFire(), Explosion.Mode.BREAK);
 +      }
 +      // CraftBukkit end
     }
  
-    protected void func_213281_b(CompoundNBT p_213281_1_) {
+    protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {

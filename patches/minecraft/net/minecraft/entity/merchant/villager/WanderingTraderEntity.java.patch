@@ -13,7 +13,7 @@
     @Nullable
 @@ -121,7 +_,15 @@
           VillagerTrades.ITrade villagertrades$itrade = avillagertrades$itrade1[i];
-          MerchantOffer merchantoffer = villagertrades$itrade.func_221182_a(this, this.field_70146_Z);
+          MerchantOffer merchantoffer = villagertrades$itrade.getOffer(this, this.random);
           if (merchantoffer != null) {
 -            merchantoffers.add(merchantoffer);
 +            // CraftBukkit start

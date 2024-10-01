@@ -17,10 +17,10 @@
 +import org.bukkit.event.inventory.InventoryType;
  
  public class CraftingInventory implements IInventory, IRecipeHelperPopulator {
-    private final NonNullList<ItemStack> field_70466_a;
-    private final int field_70464_b;
-    private final int field_174924_c;
-    private final Container field_70465_c;
+    private final NonNullList<ItemStack> items;
+    private final int width;
+    private final int height;
+    private final Container menu;
 +
 +   // CraftBukkit start - add fields
 +   public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -30,7 +30,7 @@
 +   private int maxStack = MAX_STACK;
 +
 +   public List<ItemStack> getContents() {
-+      return this.field_70466_a;
++      return this.items;
 +   }
 +
 +   public void onOpen(CraftHumanEntity who) {
@@ -38,7 +38,7 @@
 +   }
 +
 +   public InventoryType getInvType() {
-+      return field_70466_a.size() == 4 ? InventoryType.CRAFTING : InventoryType.WORKBENCH;
++      return items.size() == 4 ? InventoryType.CRAFTING : InventoryType.WORKBENCH;
 +   }
 +
 +   public void onClose(CraftHumanEntity who) {
@@ -60,7 +60,7 @@
 +   // LoliServer end
 +
 +   @Override
-+   public int func_70297_j_() {
++   public int getMaxStackSize() {
 +      return maxStack;
 +   }
 +
@@ -71,7 +71,7 @@
 +
 +   @Override
 +   public Location getLocation() {
-+      return field_70465_c instanceof WorkbenchContainer ? ((WorkbenchContainer) field_70465_c).field_75160_f.getLocation() : owner.getBukkitEntity().getLocation();
++      return menu instanceof WorkbenchContainer ? ((WorkbenchContainer) menu).resultSlots.getLocation() : owner.getBukkitEntity().getLocation();
 +   }
 +
 +   @Override
@@ -91,4 +91,4 @@
 +   // CraftBukkit end
  
     public CraftingInventory(Container p_i1807_1_, int p_i1807_2_, int p_i1807_3_) {
-       this.field_70466_a = NonNullList.func_191197_a(p_i1807_2_ * p_i1807_3_, ItemStack.field_190927_a);
+       this.items = NonNullList.withSize(p_i1807_2_ * p_i1807_3_, ItemStack.EMPTY);

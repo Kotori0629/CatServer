@@ -15,8 +15,8 @@
 +import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryView;
  
  public class ChestContainer extends Container {
-    private final IInventory field_75155_e;
-    private final int field_75154_f;
+    private final IInventory container;
+    private final int containerRows;
  
 +   // CraftBukkit start
 +   private CraftInventoryView bukkitEntity = null;
@@ -28,14 +28,14 @@
 +         return bukkitEntity;
 +      }
 +      CraftInventory inventory;
-+      if (this.field_75155_e instanceof PlayerInventory) {
-+         inventory = new org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryPlayer((PlayerInventory) this.field_75155_e);
-+      } else if (this.field_75155_e instanceof DoubleInventory) {
-+         inventory = new org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryDoubleChest((DoubleInventory) this.field_75155_e);
++      if (this.container instanceof PlayerInventory) {
++         inventory = new org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryPlayer((PlayerInventory) this.container);
++      } else if (this.container instanceof DoubleInventory) {
++         inventory = new org.bukkit.craftbukkit.v1_16_R3.inventory.CraftInventoryDoubleChest((DoubleInventory) this.container);
 +      } else {
-+         inventory = new CraftInventory(this.field_75155_e);
++         inventory = new CraftInventory(this.container);
 +      }
-+      bukkitEntity = new CraftInventoryView(this.player.field_70458_d.getBukkitEntity(), inventory, this);
++      bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
 +      return bukkitEntity;
 +   }
 +   // CraftBukkit end
@@ -44,20 +44,20 @@
        this(p_i50091_1_, p_i50091_2_, p_i50091_3_, new Inventory(9 * p_i50091_4_), p_i50091_4_);
     }
 @@ -53,6 +_,9 @@
-       func_216962_a(p_i50092_4_, p_i50092_5_ * 9);
-       this.field_75155_e = p_i50092_4_;
-       this.field_75154_f = p_i50092_5_;
+       checkContainerSize(p_i50092_4_, p_i50092_5_ * 9);
+       this.container = p_i50092_4_;
+       this.containerRows = p_i50092_5_;
 +      // CraftBukkit start - Save player
 +      this.player = p_i50092_3_;
 +      // CraftBukkit end
-       p_i50092_4_.func_174889_b(p_i50092_3_.field_70458_d);
-       int i = (this.field_75154_f - 4) * 18;
+       p_i50092_4_.startOpen(p_i50092_3_.player);
+       int i = (this.containerRows - 4) * 18;
  
 @@ -75,6 +_,7 @@
     }
  
-    public boolean func_75145_c(PlayerEntity p_75145_1_) {
+    public boolean stillValid(PlayerEntity p_75145_1_) {
 +      if (!this.checkReachable) return true; // CraftBukkit
-       return this.field_75155_e.func_70300_a(p_75145_1_);
+       return this.container.stillValid(p_75145_1_);
     }
  

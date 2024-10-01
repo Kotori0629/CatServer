@@ -4,17 +4,17 @@
        }
     }
  
--   private INBT func_193596_c(String p_193596_1_) {
-+   public INBT func_193596_c(String p_193596_1_) {
+-   private INBT type(String p_193596_1_) {
++   public INBT type(String p_193596_1_) {
        try {
-          if (field_193617_c.matcher(p_193596_1_).matches()) {
-             return FloatNBT.func_229689_a_(Float.parseFloat(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+          if (FLOAT_PATTERN.matcher(p_193596_1_).matches()) {
+             return FloatNBT.valueOf(Float.parseFloat(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
 @@ -201,7 +_,7 @@
        }
     }
  
--   private INBT func_193606_k() throws CommandSyntaxException {
-+   public INBT func_193606_k() throws CommandSyntaxException {
-       this.func_193604_b('[');
-       int i = this.field_197663_n.getCursor();
-       char c0 = this.field_197663_n.read();
+-   private INBT readArrayTag() throws CommandSyntaxException {
++   public INBT readArrayTag() throws CommandSyntaxException {
+       this.expect('[');
+       int i = this.reader.getCursor();
+       char c0 = this.reader.read();

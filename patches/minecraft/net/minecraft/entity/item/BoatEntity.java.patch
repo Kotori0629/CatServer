@@ -13,10 +13,10 @@
 +import org.bukkit.event.vehicle.VehicleUpdateEvent;
  
  public class BoatEntity extends Entity {
-    private static final DataParameter<Integer> field_184460_a = EntityDataManager.func_187226_a(BoatEntity.class, DataSerializers.field_187192_b);
+    private static final DataParameter<Integer> DATA_ID_HURT = EntityDataManager.defineId(BoatEntity.class, DataSerializers.INT);
 @@ -81,6 +_,14 @@
-    private float field_203062_aP;
-    private float field_203063_aQ;
+    private float bubbleAngle;
+    private float bubbleAngleO;
  
 +   // CraftBukkit start
 +   public double maxSpeed;
@@ -28,80 +28,80 @@
 +
     public BoatEntity(EntityType<? extends BoatEntity> p_i50129_1_, World p_i50129_2_) {
        super(p_i50129_1_, p_i50129_2_);
-       this.field_70156_m = true;
+       this.blocksBuilding = true;
 @@ -141,12 +_,33 @@
-       if (this.func_180431_b(p_70097_1_)) {
+       if (this.isInvulnerableTo(p_70097_1_)) {
           return false;
-       } else if (!this.field_70170_p.field_72995_K && !this.field_70128_L) {
+       } else if (!this.level.isClientSide && !this.removed) {
 +         // CraftBukkit start
 +         Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-+         org.bukkit.entity.Entity attacker = (p_70097_1_.func_76346_g() == null) ? null : p_70097_1_.func_76346_g().getBukkitEntity();
++         org.bukkit.entity.Entity attacker = (p_70097_1_.getEntity() == null) ? null : p_70097_1_.getEntity().getBukkitEntity();
 +
 +         VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) p_70097_2_);
-+         this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++         this.level.getCBServer().getPluginManager().callEvent(event);
 +
 +         if(event.isCancelled()){
 +            return false;
 +         }
 +         // CraftBukkit end
-          this.func_70269_c(-this.func_70267_i());
-          this.func_70265_b(10);
-          this.func_70266_a(this.func_70271_g() + p_70097_2_ * 10.0F);
-          this.func_70018_K();
-          boolean flag = p_70097_1_.func_76346_g() instanceof PlayerEntity && ((PlayerEntity)p_70097_1_.func_76346_g()).field_71075_bZ.field_75098_d;
-          if (flag || this.func_70271_g() > 40.0F) {
+          this.setHurtDir(-this.getHurtDir());
+          this.setHurtTime(10);
+          this.setDamage(this.getDamage() + p_70097_2_ * 10.0F);
+          this.markHurt();
+          boolean flag = p_70097_1_.getEntity() instanceof PlayerEntity && ((PlayerEntity)p_70097_1_.getEntity()).abilities.instabuild;
+          if (flag || this.getDamage() > 40.0F) {
 +               // CraftBukkit start
 +               VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-+               this.field_70170_p.getCBServer().getPluginManager().callEvent(destroyEvent);
++               this.level.getCBServer().getPluginManager().callEvent(destroyEvent);
 +
 +               if(destroyEvent.isCancelled()){
-+                  this.func_70266_a(40F); // Maximize damage so this doesn't trigger again right away
++                  this.setDamage(40F); // Maximize damage so this doesn't trigger again right away
 +                  return true;
 +               }
 +               // CraftBukkit end
 +
-             if (!flag && this.field_70170_p.func_82736_K().func_223586_b(GameRules.field_223604_g)) {
-                this.func_199703_a(this.func_184455_j());
+             if (!flag && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                this.spawnAtLocation(this.getDropItem());
              }
 @@ -179,9 +_,29 @@
-    public void func_70108_f(Entity p_70108_1_) {
+    public void push(Entity p_70108_1_) {
        if (p_70108_1_ instanceof BoatEntity) {
-          if (p_70108_1_.func_174813_aQ().field_72338_b < this.func_174813_aQ().field_72337_e) {
+          if (p_70108_1_.getBoundingBox().minY < this.getBoundingBox().maxY) {
 +            // CraftBukkit start
-+            if(!this.func_184223_x(p_70108_1_)) { // isSameVehicle == isRidingSameEntity maybe?
++            if(!this.isPassengerOfSameVehicle(p_70108_1_)) { // isSameVehicle == isRidingSameEntity maybe?
 +               VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), p_70108_1_.getBukkitEntity());
-+               this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++               this.level.getCBServer().getPluginManager().callEvent(event);
 +
 +               if(event.isCancelled()){
 +                  return;
 +               }
 +            }
 +            // CraftBukkit end
-             super.func_70108_f(p_70108_1_);
+             super.push(p_70108_1_);
           }
-       } else if (p_70108_1_.func_174813_aQ().field_72338_b <= this.func_174813_aQ().field_72338_b) {
+       } else if (p_70108_1_.getBoundingBox().minY <= this.getBoundingBox().minY) {
 +         // CraftBukkit start
-+         if(!this.func_184223_x(p_70108_1_)) { // isSameVehicle == isRidingSameEntity maybe?
++         if(!this.isPassengerOfSameVehicle(p_70108_1_)) { // isSameVehicle == isRidingSameEntity maybe?
 +            VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), p_70108_1_.getBukkitEntity());
-+            this.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++            this.level.getCBServer().getPluginManager().callEvent(event);
 +
 +            if(event.isCancelled()){
 +               return;
 +            }
 +         }
 +         // CraftBukkit end
-          super.func_70108_f(p_70108_1_);
+          super.push(p_70108_1_);
        }
  
 @@ -269,6 +_,22 @@
-          this.func_213317_d(Vector3d.field_186680_a);
+          this.setDeltaMovement(Vector3d.ZERO);
        }
  
 +      // CraftBukkit start
-+      org.bukkit.Server server = this.field_70170_p.getCBServer();
-+      org.bukkit.World bworld = this.field_70170_p.getWorld();
++      org.bukkit.Server server = this.level.getCBServer();
++      org.bukkit.World bworld = this.level.getWorld();
 +
-+      Location to = new Location(bworld, this.func_226277_ct_(), this.func_226278_cu_(), this.func_226281_cx_(), this.field_70177_z, this.field_70125_A);
++      Location to = new Location(bworld, this.getX(), this.getY(), this.getZ(), this.yRot, this.xRot);
 +      Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
 +      server.getPluginManager().callEvent(new VehicleUpdateEvent(vehicle));
@@ -113,31 +113,31 @@
 +      lastLocation = vehicle.getLocation();
 +      // CraftBukkit end
 +
-       this.func_203057_r();
+       this.tickBubbleColumn();
  
        for(int i = 0; i <= 1; ++i) {
 @@ -468,7 +_,7 @@
-                      blockpos$mutable.func_181079_c(l1, k2, i2);
-                      BlockState blockstate = this.field_70170_p.func_180495_p(blockpos$mutable);
-                      if (!(blockstate.func_177230_c() instanceof LilyPadBlock) && VoxelShapes.func_197879_c(blockstate.func_196952_d(this.field_70170_p, blockpos$mutable).func_197751_a((double)l1, (double)k2, (double)i2), voxelshape, IBooleanFunction.field_223238_i_)) {
--                        f += blockstate.func_177230_c().func_208618_m();
-+                        f += blockstate.getSlipperiness(this.field_70170_p, blockpos$mutable, this);
+                      blockpos$mutable.set(l1, k2, i2);
+                      BlockState blockstate = this.level.getBlockState(blockpos$mutable);
+                      if (!(blockstate.getBlock() instanceof LilyPadBlock) && VoxelShapes.joinIsNotEmpty(blockstate.getCollisionShape(this.level, blockpos$mutable).move((double)l1, (double)k2, (double)i2), voxelshape, IBooleanFunction.AND)) {
+-                        f += blockstate.getBlock().getFriction();
++                        f += blockstate.getSlipperiness(this.level, blockpos$mutable, this);
                          ++k1;
                       }
                    }
 @@ -815,6 +_,17 @@
  
-    public boolean func_204231_K() {
-       return this.field_184469_aF == BoatEntity.Status.UNDER_WATER || this.field_184469_aF == BoatEntity.Status.UNDER_FLOWING_WATER;
+    public boolean isUnderWater() {
+       return this.status == BoatEntity.Status.UNDER_WATER || this.status == BoatEntity.Status.UNDER_FLOWING_WATER;
 +   }
 +
 +   // Forge: Fix MC-119811 by instantly completing lerp on board
 +   @Override
 +   protected boolean cBAddPassenger(Entity passenger) {
 +      super.cBAddPassenger(passenger);
-+      if (this.func_184186_bw() && this.field_184476_at > 0) {
-+         this.field_184476_at = 0;
-+         this.func_70080_a(this.field_70281_h, this.field_184477_av, this.field_184478_aw, (float)this.field_70273_g, (float)this.field_184479_ay);
++      if (this.isControlledByLocalInstance() && this.lerpSteps > 0) {
++         this.lerpSteps = 0;
++         this.absMoveTo(this.lerpX, this.lerpY, this.lerpZ, (float)this.lerpYRot, (float)this.lerpXRot);
 +      }
 +      return false;
     }

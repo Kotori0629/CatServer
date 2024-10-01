@@ -28,16 +28,16 @@
 +import org.bukkit.inventory.InventoryHolder;
  
  public class BrewingStandTileEntity extends LockableTileEntity implements ISidedInventory, ITickableTileEntity {
-    private static final int[] field_145941_a = new int[]{3};
-    private static final int[] field_184277_f = new int[]{0, 1, 2, 3};
-    private static final int[] field_145947_i = new int[]{0, 1, 2, 4};
-    private NonNullList<ItemStack> field_145945_j = NonNullList.func_191197_a(5, ItemStack.field_190927_a);
--   private int field_145946_k;
-+   public int field_145946_k;
-    private boolean[] field_145943_l;
-    private Item field_145944_m;
--   private int field_184278_m;
-+   public int field_184278_m; // private->public CraftBukkit
+    private static final int[] SLOTS_FOR_UP = new int[]{3};
+    private static final int[] SLOTS_FOR_DOWN = new int[]{0, 1, 2, 3};
+    private static final int[] SLOTS_FOR_SIDES = new int[]{0, 1, 2, 4};
+    private NonNullList<ItemStack> items = NonNullList.withSize(5, ItemStack.EMPTY);
+-   private int brewTime;
++   public int brewTime;
+    private boolean[] lastPotionCount;
+    private Item ingredient;
+-   private int fuel;
++   public int fuel; // private->public CraftBukkit
 +
 +   // CraftBukkit start - add fields and methods
 +   private int lastTick = MinecraftServer.currentTick;
@@ -46,7 +46,7 @@
 +
 +   @Override
 +   public List<ItemStack> getContents() {
-+      return this.field_145945_j;
++      return this.items;
 +   }
 +
 +   @Override
@@ -70,72 +70,72 @@
 +   }
 +
 +   @Override
-+   public int func_70297_j_() {
++   public int getMaxStackSize() {
 +      return maxStack;
 +   }
 +
 +   // CraftBukkit end
 +
-    protected final IIntArray field_213954_a = new IIntArray() {
-       public int func_221476_a(int p_221476_1_) {
+    protected final IIntArray dataAccess = new IIntArray() {
+       public int get(int p_221476_1_) {
           switch(p_221476_1_) {
 @@ -85,17 +_,32 @@
-    public void func_73660_a() {
-       ItemStack itemstack = this.field_145945_j.get(4);
-       if (this.field_184278_m <= 0 && itemstack.func_77973_b() == Items.field_151065_br) {
--         this.field_184278_m = 20;
+    public void tick() {
+       ItemStack itemstack = this.items.get(4);
+       if (this.fuel <= 0 && itemstack.getItem() == Items.BLAZE_POWDER) {
+-         this.fuel = 20;
 +         // CraftBukkit start
-+         BrewingStandFuelEvent event = new BrewingStandFuelEvent(field_145850_b.getWorld().getBlockAt(this.field_174879_c.func_177958_n(), this.field_174879_c.func_177956_o(), this.field_174879_c.func_177952_p()), CraftItemStack.asCraftMirror(itemstack), 20);
-+         this.field_145850_b.getCBServer().getPluginManager().callEvent(event);
++         BrewingStandFuelEvent event = new BrewingStandFuelEvent(level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ()), CraftItemStack.asCraftMirror(itemstack), 20);
++         this.level.getCBServer().getPluginManager().callEvent(event);
 +         if (event.isCancelled()) {
 +            return;
 +         }
-+         this.field_184278_m = event.getFuelPower();
-+         if (this.field_184278_m > 0 && event.isConsuming()) {
-          itemstack.func_190918_g(1);
++         this.fuel = event.getFuelPower();
++         if (this.fuel > 0 && event.isConsuming()) {
+          itemstack.shrink(1);
 +         }
 +         // CraftBukkit end
-          this.func_70296_d();
+          this.setChanged();
        }
  
-       boolean flag = this.func_145934_k();
-       boolean flag1 = this.field_145946_k > 0;
-       ItemStack itemstack1 = this.field_145945_j.get(3);
+       boolean flag = this.isBrewable();
+       boolean flag1 = this.brewTime > 0;
+       ItemStack itemstack1 = this.items.get(3);
 +
 +      // CraftBukkit start - Use wall time instead of ticks for brewing
 +      int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
 +      this.lastTick = MinecraftServer.currentTick;
 +
        if (flag1) {
--         --this.field_145946_k;
--         boolean flag2 = this.field_145946_k == 0;
-+         this.field_145946_k -= elapsedTicks;
-+         boolean flag2 = this.field_145946_k <= 0; // == -> <=
+-         --this.brewTime;
+-         boolean flag2 = this.brewTime == 0;
++         this.brewTime -= elapsedTicks;
++         boolean flag2 = this.brewTime <= 0; // == -> <=
 +         // CraftBukkit end
           if (flag2 && flag) {
-             this.func_145940_l();
-             this.func_70296_d();
+             this.doBrew();
+             this.setChanged();
 @@ -146,6 +_,7 @@
  
-    private boolean func_145934_k() {
-       ItemStack itemstack = this.field_145945_j.get(3);
-+      if (!itemstack.func_190926_b()) return net.minecraftforge.common.brewing.BrewingRecipeRegistry.canBrew(field_145945_j, itemstack, field_145947_i); // divert to VanillaBrewingRegistry
-       if (itemstack.func_190926_b()) {
+    private boolean isBrewable() {
+       ItemStack itemstack = this.items.get(3);
++      if (!itemstack.isEmpty()) return net.minecraftforge.common.brewing.BrewingRecipeRegistry.canBrew(items, itemstack, SLOTS_FOR_SIDES); // divert to VanillaBrewingRegistry
+       if (itemstack.isEmpty()) {
           return false;
-       } else if (!PotionBrewing.func_185205_a(itemstack)) {
+       } else if (!PotionBrewing.isIngredient(itemstack)) {
 @@ -163,22 +_,33 @@
     }
  
-    private void func_145940_l() {
-+      if (net.minecraftforge.event.ForgeEventFactory.onPotionAttemptBrew(field_145945_j)) return;
-       ItemStack itemstack = this.field_145945_j.get(3);
+    private void doBrew() {
++      if (net.minecraftforge.event.ForgeEventFactory.onPotionAttemptBrew(items)) return;
+       ItemStack itemstack = this.items.get(3);
  
 -      for(int i = 0; i < 3; ++i) {
--         this.field_145945_j.set(i, PotionBrewing.func_185212_d(itemstack, this.field_145945_j.get(i)));
+-         this.items.set(i, PotionBrewing.mix(itemstack, this.items.get(i)));
 +      // CraftBukkit start
 +      InventoryHolder owner = this.getOwner();
 +      if (owner != null) {
-+         BrewEvent event = new BrewEvent(field_145850_b.getWorld().getBlockAt(this.field_174879_c.func_177958_n(), this.field_174879_c.func_177956_o(), this.field_174879_c.func_177952_p()), (org.bukkit.inventory.BrewerInventory) owner.getInventory(), this.field_184278_m);
++         BrewEvent event = new BrewEvent(level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ()), (org.bukkit.inventory.BrewerInventory) owner.getInventory(), this.fuel);
 +         org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +         if (event.isCancelled()) {
 +            return;
@@ -143,45 +143,45 @@
        }
 +      // CraftBukkit end
  
--      itemstack.func_190918_g(1);
-+      net.minecraftforge.common.brewing.BrewingRecipeRegistry.brewPotions(field_145945_j, itemstack, field_145947_i);
-+      net.minecraftforge.event.ForgeEventFactory.onPotionBrewed(field_145945_j);
-       BlockPos blockpos = this.func_174877_v();
--      if (itemstack.func_77973_b().func_77634_r()) {
--         ItemStack itemstack1 = new ItemStack(itemstack.func_77973_b().func_77668_q());
+-      itemstack.shrink(1);
++      net.minecraftforge.common.brewing.BrewingRecipeRegistry.brewPotions(items, itemstack, SLOTS_FOR_SIDES);
++      net.minecraftforge.event.ForgeEventFactory.onPotionBrewed(items);
+       BlockPos blockpos = this.getBlockPos();
+-      if (itemstack.getItem().hasCraftingRemainingItem()) {
+-         ItemStack itemstack1 = new ItemStack(itemstack.getItem().getCraftingRemainingItem());
 +      if (itemstack.hasContainerItem()) {
 +         ItemStack itemstack1 = itemstack.getContainerItem();
-+         itemstack.func_190918_g(1);
-          if (itemstack.func_190926_b()) {
++         itemstack.shrink(1);
+          if (itemstack.isEmpty()) {
              itemstack = itemstack1;
-          } else if (!this.field_145850_b.field_72995_K) {
-             InventoryHelper.func_180173_a(this.field_145850_b, (double)blockpos.func_177958_n(), (double)blockpos.func_177956_o(), (double)blockpos.func_177952_p(), itemstack1);
+          } else if (!this.level.isClientSide) {
+             InventoryHelper.dropItemStack(this.level, (double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ(), itemstack1);
           }
        }
-+      else itemstack.func_190918_g(1);
++      else itemstack.shrink(1);
  
-       this.field_145945_j.set(3, itemstack);
-       this.field_145850_b.func_217379_c(1035, blockpos, 0);
+       this.items.set(3, itemstack);
+       this.level.levelEvent(1035, blockpos, 0);
 @@ -229,13 +_,13 @@
  
-    public boolean func_94041_b(int p_94041_1_, ItemStack p_94041_2_) {
+    public boolean canPlaceItem(int p_94041_1_, ItemStack p_94041_2_) {
        if (p_94041_1_ == 3) {
--         return PotionBrewing.func_185205_a(p_94041_2_);
+-         return PotionBrewing.isIngredient(p_94041_2_);
 +         return net.minecraftforge.common.brewing.BrewingRecipeRegistry.isValidIngredient(p_94041_2_);
        } else {
-          Item item = p_94041_2_.func_77973_b();
+          Item item = p_94041_2_.getItem();
           if (p_94041_1_ == 4) {
-             return item == Items.field_151065_br;
+             return item == Items.BLAZE_POWDER;
           } else {
--            return (item == Items.field_151068_bn || item == Items.field_185155_bH || item == Items.field_185156_bI || item == Items.field_151069_bo) && this.func_70301_a(p_94041_1_).func_190926_b();
-+            return net.minecraftforge.common.brewing.BrewingRecipeRegistry.isValidInput(p_94041_2_) && this.func_70301_a(p_94041_1_).func_190926_b();
+-            return (item == Items.POTION || item == Items.SPLASH_POTION || item == Items.LINGERING_POTION || item == Items.GLASS_BOTTLE) && this.getItem(p_94041_1_).isEmpty();
++            return net.minecraftforge.common.brewing.BrewingRecipeRegistry.isValidInput(p_94041_2_) && this.getItem(p_94041_1_).isEmpty();
           }
        }
     }
 @@ -266,5 +_,28 @@
  
-    protected Container func_213906_a(int p_213906_1_, PlayerInventory p_213906_2_) {
-       return new BrewingStandContainer(p_213906_1_, p_213906_2_, this, this.field_213954_a);
+    protected Container createMenu(int p_213906_1_, PlayerInventory p_213906_2_) {
+       return new BrewingStandContainer(p_213906_1_, p_213906_2_, this, this.dataAccess);
 +   }
 +
 +   net.minecraftforge.common.util.LazyOptional<? extends net.minecraftforge.items.IItemHandler>[] handlers =
@@ -189,7 +189,7 @@
 +
 +   @Override
 +   public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> capability, @Nullable Direction facing) {
-+      if (!this.field_145846_f && facing != null && capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
++      if (!this.remove && facing != null && capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
 +         if (facing == Direction.UP)
 +            return handlers[0].cast();
 +         else if (facing == Direction.DOWN)

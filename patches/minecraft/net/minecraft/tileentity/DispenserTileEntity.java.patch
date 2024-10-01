@@ -16,9 +16,9 @@
 +import org.bukkit.entity.HumanEntity;
  
  public class DispenserTileEntity extends LockableLootTileEntity {
-    private static final Random field_174913_f = new Random();
+    private static final Random RANDOM = new Random();
 @@ -28,6 +_,41 @@
-    public int func_70302_i_() {
+    public int getContainerSize() {
        return 9;
     }
 +
@@ -27,13 +27,13 @@
 +   private int maxStack = MAX_STACK;
 +
 +   @Override
-+   public int func_70297_j_() {
++   public int getMaxStackSize() {
 +      return maxStack;
 +   }
 +
 +   @Override
 +    public List<ItemStack> getContents() {
-+      return this.field_146022_i;
++      return this.items;
 +    }
 +
 +   @Override
@@ -57,5 +57,5 @@
 +   }
 +   // CraftBukkit end
  
-    public int func_146017_i() {
-       this.func_184281_d((PlayerEntity)null);
+    public int getRandomSlot() {
+       this.unpackLootTable((PlayerEntity)null);

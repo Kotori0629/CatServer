@@ -3,9 +3,9 @@
 @@ -13,7 +_,7 @@
  
  public class SChangeBlockPacket implements IPacket<IClientPlayNetHandler> {
-    private BlockPos field_179828_a;
--   private BlockState field_197686_b;
-+   public BlockState field_197686_b;
+    private BlockPos pos;
+-   private BlockState blockState;
++   public BlockState blockState;
  
     public SChangeBlockPacket() {
     }

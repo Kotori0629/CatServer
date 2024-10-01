@@ -3,42 +3,42 @@
 @@ -188,7 +_,13 @@
     }
  
-    protected void func_197403_b() throws CommandSyntaxException {
--      this.field_210327_T = true;
+    protected void parseSelector() throws CommandSyntaxException {
+-      this.usesSelectors = true;
 +      parseSelector(true);
 +   }
 +
 +   // CraftBukkit start
 +   protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
-+      this.field_210327_T = !overridePermissions;
++      this.usesSelectors = !overridePermissions;
 +      // CraftBukkit end
-       this.field_201354_D = this::func_201959_d;
-       if (!this.field_197417_j.canRead()) {
-          throw field_197410_c.createWithContext(this.field_197417_j);
+       this.suggestions = this::suggestSelector;
+       if (!this.reader.canRead()) {
+          throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(this.reader);
 @@ -440,6 +_,12 @@
     }
  
-    public EntitySelector func_201345_m() throws CommandSyntaxException {
+    public EntitySelector parse() throws CommandSyntaxException {
 +      // CraftBukkit start
 +      return parse(false);
 +   }
 +
 +   public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
 +      // CraftBukkit end
-       this.field_201999_C = this.field_197417_j.getCursor();
-       this.field_201354_D = this::func_201981_b;
-       if (this.field_197417_j.canRead() && this.field_197417_j.peek() == '@') {
+       this.startPosition = this.reader.getCursor();
+       this.suggestions = this::suggestNameOrSelector;
+       if (this.reader.canRead() && this.reader.peek() == '@') {
 @@ -448,7 +_,10 @@
           }
  
-          this.field_197417_j.skip();
--         this.func_197403_b();
+          this.reader.skip();
+-         this.parseSelector();
 +         EntitySelector forgeSelector = net.minecraftforge.common.command.EntitySelectorManager.parseSelector(this);
 +         if (forgeSelector != null)
 +            return forgeSelector;
 +         this.parseSelector(overridePermissions); // CraftBukkit
        } else {
-          this.func_197382_c();
+          this.parseNameOrUUID();
        }
 @@ -463,6 +_,7 @@
        p_210326_0_.suggest("@r", new TranslationTextComponent("argument.entity.selector.randomPlayer"));
@@ -47,4 +47,4 @@
 +      net.minecraftforge.common.command.EntitySelectorManager.fillSelectorSuggestions(p_210326_0_);
     }
  
-    private CompletableFuture<Suggestions> func_201981_b(SuggestionsBuilder p_201981_1_, Consumer<SuggestionsBuilder> p_201981_2_) {
+    private CompletableFuture<Suggestions> suggestNameOrSelector(SuggestionsBuilder p_201981_1_, Consumer<SuggestionsBuilder> p_201981_2_) {

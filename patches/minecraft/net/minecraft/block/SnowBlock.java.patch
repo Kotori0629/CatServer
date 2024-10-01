@@ -7,16 +7,16 @@
 +import org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory;
  
  public class SnowBlock extends Block {
-    public static final IntegerProperty field_176315_a = BlockStateProperties.field_208129_ad;
+    public static final IntegerProperty LAYERS = BlockStateProperties.LAYERS;
 @@ -79,6 +_,11 @@
  
-    public void func_225542_b_(BlockState p_225542_1_, ServerWorld p_225542_2_, BlockPos p_225542_3_, Random p_225542_4_) {
-       if (p_225542_2_.func_226658_a_(LightType.BLOCK, p_225542_3_) > 11) {
+    public void randomTick(BlockState p_225542_1_, ServerWorld p_225542_2_, BlockPos p_225542_3_, Random p_225542_4_) {
+       if (p_225542_2_.getBrightness(LightType.BLOCK, p_225542_3_) > 11) {
 +         // CraftBukkit start
-+         if (CraftEventFactory.callBlockFadeEvent(p_225542_2_, p_225542_3_, Blocks.field_150350_a.func_176223_P()).isCancelled()) {
++         if (CraftEventFactory.callBlockFadeEvent(p_225542_2_, p_225542_3_, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +            return;
 +         }
 +         // CraftBukkit end
-          func_220075_c(p_225542_1_, p_225542_2_, p_225542_3_);
-          p_225542_2_.func_217377_a(p_225542_3_, false);
+          dropResources(p_225542_1_, p_225542_2_, p_225542_3_);
+          p_225542_2_.removeBlock(p_225542_3_, false);
        }

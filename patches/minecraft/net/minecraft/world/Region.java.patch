@@ -6,9 +6,9 @@
  
 +   @Override
 +   public boolean isPosLoaded(BlockPos pos) {
-+      return this.field_72815_e.isPosLoaded(pos);
++      return this.level.isPosLoaded(pos);
 +   }
 +
-    private IChunk func_226703_d_(BlockPos p_226703_1_) {
-       return this.func_226702_a_(p_226703_1_.func_177958_n() >> 4, p_226703_1_.func_177952_p() >> 4);
+    private IChunk getChunk(BlockPos p_226703_1_) {
+       return this.getChunk(p_226703_1_.getX() >> 4, p_226703_1_.getZ() >> 4);
     }

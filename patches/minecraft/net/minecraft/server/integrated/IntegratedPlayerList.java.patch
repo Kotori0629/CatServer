@@ -3,9 +3,9 @@
 @@ -30,7 +_,7 @@
     }
  
-    public ITextComponent func_206258_a(SocketAddress p_206258_1_, GameProfile p_206258_2_) {
--      return (ITextComponent)(p_206258_2_.getName().equalsIgnoreCase(this.func_72365_p().func_71214_G()) && this.func_152612_a(p_206258_2_.getName()) != null ? new TranslationTextComponent("multiplayer.disconnect.name_taken") : super.func_206258_a(p_206258_1_, p_206258_2_));
-+      return (ITextComponent)(p_206258_2_.getName().equalsIgnoreCase(this.func_72365_p().func_71214_G()) && this.func_152612_a(p_206258_2_.getName()) != null ? new TranslationTextComponent("multiplayer.disconnect.name_taken") : null);
+    public ITextComponent canPlayerLogin(SocketAddress p_206258_1_, GameProfile p_206258_2_) {
+-      return (ITextComponent)(p_206258_2_.getName().equalsIgnoreCase(this.getServer().getSingleplayerName()) && this.getPlayerByName(p_206258_2_.getName()) != null ? new TranslationTextComponent("multiplayer.disconnect.name_taken") : super.canPlayerLogin(p_206258_1_, p_206258_2_));
++      return (ITextComponent)(p_206258_2_.getName().equalsIgnoreCase(this.getServer().getSingleplayerName()) && this.getPlayerByName(p_206258_2_.getName()) != null ? new TranslationTextComponent("multiplayer.disconnect.name_taken") : null);
     }
  
-    public IntegratedServer func_72365_p() {
+    public IntegratedServer getServer() {

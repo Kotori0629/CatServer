@@ -16,7 +16,7 @@
  import net.minecraft.world.server.ServerWorld;
 -
 -public class LecternTileEntity extends TileEntity implements IClearable, INamedContainerProvider {
--   private final IInventory field_214048_a = new IInventory() {
+-   private final IInventory bookAccess = new IInventory() {
 +import org.bukkit.Location;
 +import org.bukkit.block.Lectern;
 +import org.bukkit.command.CommandSender;
@@ -27,7 +27,7 @@
 +
 +public class LecternTileEntity extends TileEntity implements IClearable, INamedContainerProvider, ICommandSource { // CraftBukkit - ICommandSource
 +   // CraftBukkit start - add fields and methods
-+   public final IInventory field_214048_a = new LecternInventory();
++   public final IInventory bookAccess = new LecternInventory();
 +   public class LecternInventory implements IInventory {
 +
 +       public List<HumanEntity> transaction = new ArrayList<>();
@@ -35,7 +35,7 @@
 +
 +       @Override
 +       public List<ItemStack> getContents() {
-+          return Arrays.asList(field_214050_c);
++          return Arrays.asList(book);
 +       }
 +
 +       @Override
@@ -60,7 +60,7 @@
 +
 +       @Override
 +       public Location getLocation() {
-+          return new Location(field_145850_b.getWorld(), field_174879_c.func_177958_n(), field_174879_c.func_177956_o(), field_174879_c.func_177952_p());
++          return new Location(level.getWorld(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
 +       }
 +
 +       @Override
@@ -73,107 +73,107 @@
 +       }
 +
 +       // CraftBukkit end
-       public int func_70302_i_() {
+       public int getContainerSize() {
           return 1;
        }
 @@ -36,13 +_,13 @@
-          return LecternTileEntity.this.field_214050_c.func_190926_b();
+          return LecternTileEntity.this.book.isEmpty();
        }
  
--      public ItemStack func_70301_a(int p_70301_1_) {
--         return p_70301_1_ == 0 ? LecternTileEntity.this.field_214050_c : ItemStack.field_190927_a;
-+      public ItemStack func_70301_a(int index) {
-+         return index == 0 ? LecternTileEntity.this.field_214050_c : ItemStack.field_190927_a;
+-      public ItemStack getItem(int p_70301_1_) {
+-         return p_70301_1_ == 0 ? LecternTileEntity.this.book : ItemStack.EMPTY;
++      public ItemStack getItem(int index) {
++         return index == 0 ? LecternTileEntity.this.book : ItemStack.EMPTY;
        }
  
--      public ItemStack func_70298_a(int p_70298_1_, int p_70298_2_) {
+-      public ItemStack removeItem(int p_70298_1_, int p_70298_2_) {
 -         if (p_70298_1_ == 0) {
--            ItemStack itemstack = LecternTileEntity.this.field_214050_c.func_77979_a(p_70298_2_);
-+      public ItemStack func_70298_a(int index, int count) {
+-            ItemStack itemstack = LecternTileEntity.this.book.split(p_70298_2_);
++      public ItemStack removeItem(int index, int count) {
 +         if (index == 0) {
-+            ItemStack itemstack = LecternTileEntity.this.field_214050_c.func_77979_a(count);
-             if (LecternTileEntity.this.field_214050_c.func_190926_b()) {
-                LecternTileEntity.this.func_214042_s();
++            ItemStack itemstack = LecternTileEntity.this.book.split(count);
+             if (LecternTileEntity.this.book.isEmpty()) {
+                LecternTileEntity.this.onBookItemRemove();
              }
 @@ -53,8 +_,8 @@
           }
        }
  
--      public ItemStack func_70304_b(int p_70304_1_) {
+-      public ItemStack removeItemNoUpdate(int p_70304_1_) {
 -         if (p_70304_1_ == 0) {
-+      public ItemStack func_70304_b(int index) {
++      public ItemStack removeItemNoUpdate(int index) {
 +         if (index == 0) {
-             ItemStack itemstack = LecternTileEntity.this.field_214050_c;
-             LecternTileEntity.this.field_214050_c = ItemStack.field_190927_a;
-             LecternTileEntity.this.func_214042_s();
+             ItemStack itemstack = LecternTileEntity.this.book;
+             LecternTileEntity.this.book = ItemStack.EMPTY;
+             LecternTileEntity.this.onBookItemRemove();
 @@ -64,26 +_,34 @@
           }
        }
  
--      public void func_70299_a(int p_70299_1_, ItemStack p_70299_2_) {
-+      public void func_70299_a(int index, ItemStack stack) {
+-      public void setItem(int p_70299_1_, ItemStack p_70299_2_) {
++      public void setItem(int index, ItemStack stack) {
 +         // CraftBukkit start
 +          if (index == 0) {
-+            LecternTileEntity.this.func_214045_a(stack);
-+            if (LecternTileEntity.this.func_145831_w() != null) {
-+               LecternBlock.func_220155_a(LecternTileEntity.this.func_145831_w(), LecternTileEntity.this.func_174877_v(), LecternTileEntity.this.func_195044_w(), LecternTileEntity.this.func_214046_f());
++            LecternTileEntity.this.setBook(stack);
++            if (LecternTileEntity.this.getLevel() != null) {
++               LecternBlock.resetBookState(LecternTileEntity.this.getLevel(), LecternTileEntity.this.getBlockPos(), LecternTileEntity.this.getBlockState(), LecternTileEntity.this.hasBook());
 +            }
 +         }
 +         // CraftBukkit end
        }
  
-       public int func_70297_j_() {
+       public int getMaxStackSize() {
 -         return 1;
 +         return maxStack; // CraftBukkit
        }
  
-       public void func_70296_d() {
-          LecternTileEntity.this.func_70296_d();
+       public void setChanged() {
+          LecternTileEntity.this.setChanged();
        }
  
--      public boolean func_70300_a(PlayerEntity p_70300_1_) {
-+      public boolean func_70300_a(PlayerEntity player) {
-          if (LecternTileEntity.this.field_145850_b.func_175625_s(LecternTileEntity.this.field_174879_c) != LecternTileEntity.this) {
+-      public boolean stillValid(PlayerEntity p_70300_1_) {
++      public boolean stillValid(PlayerEntity player) {
+          if (LecternTileEntity.this.level.getBlockEntity(LecternTileEntity.this.worldPosition) != LecternTileEntity.this) {
              return false;
           } else {
--            return p_70300_1_.func_70092_e((double)LecternTileEntity.this.field_174879_c.func_177958_n() + 0.5D, (double)LecternTileEntity.this.field_174879_c.func_177956_o() + 0.5D, (double)LecternTileEntity.this.field_174879_c.func_177952_p() + 0.5D) > 64.0D ? false : LecternTileEntity.this.func_214046_f();
-+            return player.func_70092_e((double)LecternTileEntity.this.field_174879_c.func_177958_n() + 0.5D, (double)LecternTileEntity.this.field_174879_c.func_177956_o() + 0.5D, (double)LecternTileEntity.this.field_174879_c.func_177952_p() + 0.5D) > 64.0D ? false : LecternTileEntity.this.func_214046_f();
+-            return p_70300_1_.distanceToSqr((double)LecternTileEntity.this.worldPosition.getX() + 0.5D, (double)LecternTileEntity.this.worldPosition.getY() + 0.5D, (double)LecternTileEntity.this.worldPosition.getZ() + 0.5D) > 64.0D ? false : LecternTileEntity.this.hasBook();
++            return player.distanceToSqr((double)LecternTileEntity.this.worldPosition.getX() + 0.5D, (double)LecternTileEntity.this.worldPosition.getY() + 0.5D, (double)LecternTileEntity.this.worldPosition.getZ() + 0.5D) > 64.0D ? false : LecternTileEntity.this.hasBook();
           }
        }
  
--      public boolean func_94041_b(int p_94041_1_, ItemStack p_94041_2_) {
-+      public boolean func_94041_b(int index, ItemStack stack) {
+-      public boolean canPlaceItem(int p_94041_1_, ItemStack p_94041_2_) {
++      public boolean canPlaceItem(int index, ItemStack stack) {
           return false;
        }
  
 @@ -91,13 +_,13 @@
        }
     };
-    private final IIntArray field_214049_b = new IIntArray() {
--      public int func_221476_a(int p_221476_1_) {
--         return p_221476_1_ == 0 ? LecternTileEntity.this.field_214051_g : 0;
-+      public int func_221476_a(int index) {
-+         return index == 0 ? LecternTileEntity.this.field_214051_g : 0;
+    private final IIntArray dataAccess = new IIntArray() {
+-      public int get(int p_221476_1_) {
+-         return p_221476_1_ == 0 ? LecternTileEntity.this.page : 0;
++      public int get(int index) {
++         return index == 0 ? LecternTileEntity.this.page : 0;
        }
  
--      public void func_221477_a(int p_221477_1_, int p_221477_2_) {
+-      public void set(int p_221477_1_, int p_221477_2_) {
 -         if (p_221477_1_ == 0) {
--            LecternTileEntity.this.func_214035_a(p_221477_2_);
-+      public void func_221477_a(int index, int value) {
+-            LecternTileEntity.this.setPage(p_221477_2_);
++      public void set(int index, int value) {
 +         if (index == 0) {
-+            LecternTileEntity.this.func_214035_a(value);
++            LecternTileEntity.this.setPage(value);
           }
  
        }
 @@ -140,7 +_,7 @@
-       this.func_70296_d();
+       this.setChanged();
     }
  
--   private void func_214035_a(int p_214035_1_) {
-+   public void func_214035_a(int p_214035_1_) {
-       int i = MathHelper.func_76125_a(p_214035_1_, 0, this.field_214052_h - 1);
-       if (i != this.field_214051_g) {
-          this.field_214051_g = i;
+-   private void setPage(int p_214035_1_) {
++   public void setPage(int p_214035_1_) {
+       int i = MathHelper.clamp(p_214035_1_, 0, this.pageCount - 1);
+       if (i != this.page) {
+          this.page = i;
 @@ -167,6 +_,34 @@
        return p_214047_1_;
     }
@@ -181,50 +181,50 @@
 +
 +   // CraftBukkit start
 +   @Override
-+   public void func_145747_a(ITextComponent component, UUID senderUUID) {
++   public void sendMessage(ITextComponent component, UUID senderUUID) {
 +
 +   }
 +
 +   @Override
 +   public CommandSender getBukkitSender(final CommandSource wrapper) {
-+      return (wrapper.func_197022_f() != null) ? wrapper.func_197022_f().getBukkitSender(wrapper) : new CraftBlockCommandSender(wrapper, this);
++      return (wrapper.getEntity() != null) ? wrapper.getEntity().getBukkitSender(wrapper) : new CraftBlockCommandSender(wrapper, this);
 +   }
 +
 +   @Override
-+   public boolean func_195039_a() {
++   public boolean acceptsSuccess() {
 +      return false;
 +   }
 +
 +   @Override
-+   public boolean func_195040_b() {
++   public boolean acceptsFailure() {
 +      return false;
 +   }
 +
 +   @Override
-+   public boolean func_195041_r_() {
++   public boolean shouldInformAdmins() {
 +      return false;
 +   }
 +   // CraftBukkit end
 +
-    private CommandSource func_214039_a(@Nullable PlayerEntity p_214039_1_) {
+    private CommandSource createCommandSourceStack(@Nullable PlayerEntity p_214039_1_) {
        String s;
        ITextComponent itextcomponent;
 @@ -179,7 +_,8 @@
        }
  
-       Vector3d vector3d = Vector3d.func_237489_a_(this.field_174879_c);
--      return new CommandSource(ICommandSource.field_213139_a_, vector3d, Vector2f.field_189974_a, (ServerWorld)this.field_145850_b, 2, s, itextcomponent, this.field_145850_b.func_73046_m(), p_214039_1_);
+       Vector3d vector3d = Vector3d.atCenterOf(this.worldPosition);
+-      return new CommandSource(ICommandSource.NULL, vector3d, Vector2f.ZERO, (ServerWorld)this.level, 2, s, itextcomponent, this.level.getServer(), p_214039_1_);
 +      // CraftBukkit - this
-+      return new CommandSource(this, vector3d, Vector2f.field_189974_a, (ServerWorld)this.field_145850_b, 2, s, itextcomponent, this.field_145850_b.func_73046_m(), p_214039_1_);
++      return new CommandSource(this, vector3d, Vector2f.ZERO, (ServerWorld)this.level, 2, s, itextcomponent, this.level.getServer(), p_214039_1_);
     }
  
-    public boolean func_183000_F() {
+    public boolean onlyOpCanSetNbt() {
 @@ -213,7 +_,7 @@
     }
  
     public Container createMenu(int p_createMenu_1_, PlayerInventory p_createMenu_2_, PlayerEntity p_createMenu_3_) {
--      return new LecternContainer(p_createMenu_1_, this.field_214048_a, this.field_214049_b);
-+      return new LecternContainer(p_createMenu_1_, this.field_214048_a, this.field_214049_b, p_createMenu_2_); // CraftBukkit
+-      return new LecternContainer(p_createMenu_1_, this.bookAccess, this.dataAccess);
++      return new LecternContainer(p_createMenu_1_, this.bookAccess, this.dataAccess, p_createMenu_2_); // CraftBukkit
     }
  
-    public ITextComponent func_145748_c_() {
+    public ITextComponent getDisplayName() {

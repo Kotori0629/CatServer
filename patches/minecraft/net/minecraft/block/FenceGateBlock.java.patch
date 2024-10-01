@@ -8,14 +8,14 @@
 +import org.bukkit.event.block.BlockRedstoneEvent;
  
  public class FenceGateBlock extends HorizontalBlock {
-    public static final BooleanProperty field_176466_a = BlockStateProperties.field_208193_t;
+    public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
 @@ -121,6 +_,19 @@
-    public void func_220069_a(BlockState p_220069_1_, World p_220069_2_, BlockPos p_220069_3_, Block p_220069_4_, BlockPos p_220069_5_, boolean p_220069_6_) {
-       if (!p_220069_2_.field_72995_K) {
-          boolean flag = p_220069_2_.func_175640_z(p_220069_3_);
+    public void neighborChanged(BlockState p_220069_1_, World p_220069_2_, BlockPos p_220069_3_, Block p_220069_4_, BlockPos p_220069_5_, boolean p_220069_6_) {
+       if (!p_220069_2_.isClientSide) {
+          boolean flag = p_220069_2_.hasNeighborSignal(p_220069_3_);
 +
 +         // CraftBukkit start
-+         boolean oldPowered = p_220069_1_.func_177229_b(FenceGateBlock.field_176465_b);
++         boolean oldPowered = p_220069_1_.getValue(FenceGateBlock.POWERED);
 +         if (oldPowered != flag) {
 +            int newPower = flag ? 15 : 0;
 +            int oldPower = oldPowered ? 15 : 0;
@@ -26,6 +26,6 @@
 +         }
 +         // CraftBukkit end
 +
-          if (p_220069_1_.func_177229_b(field_176465_b) != flag) {
-             p_220069_2_.func_180501_a(p_220069_3_, p_220069_1_.func_206870_a(field_176465_b, Boolean.valueOf(flag)).func_206870_a(field_176466_a, Boolean.valueOf(flag)), 2);
-             if (p_220069_1_.func_177229_b(field_176466_a) != flag) {
+          if (p_220069_1_.getValue(POWERED) != flag) {
+             p_220069_2_.setBlock(p_220069_3_, p_220069_1_.setValue(POWERED, Boolean.valueOf(flag)).setValue(OPEN, Boolean.valueOf(flag)), 2);
+             if (p_220069_1_.getValue(OPEN) != flag) {

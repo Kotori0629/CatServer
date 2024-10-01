@@ -7,21 +7,21 @@
 +import org.bukkit.event.block.BlockRedstoneEvent;
  
  public class DetectorRailBlock extends AbstractRailBlock {
-    public static final EnumProperty<RailShape> field_176573_b = BlockStateProperties.field_208166_S;
+    public static final EnumProperty<RailShape> SHAPE = BlockStateProperties.RAIL_SHAPE_STRAIGHT;
 @@ -66,12 +_,21 @@
  
-    private void func_176570_e(World p_176570_1_, BlockPos p_176570_2_, BlockState p_176570_3_) {
-       if (this.func_196260_a(p_176570_3_, p_176570_1_, p_176570_2_)) {
-+         if (p_176570_3_.func_177230_c() != this) { return; } // Paper - not our block, don't do anything
-          boolean flag = p_176570_3_.func_177229_b(field_176574_M);
+    private void checkPressed(World p_176570_1_, BlockPos p_176570_2_, BlockState p_176570_3_) {
+       if (this.canSurvive(p_176570_3_, p_176570_1_, p_176570_2_)) {
++         if (p_176570_3_.getBlock() != this) { return; } // Paper - not our block, don't do anything
+          boolean flag = p_176570_3_.getValue(POWERED);
           boolean flag1 = false;
-          List<AbstractMinecartEntity> list = this.func_200878_a(p_176570_1_, p_176570_2_, AbstractMinecartEntity.class, (Predicate<Entity>)null);
+          List<AbstractMinecartEntity> list = this.getInteractingMinecartOfType(p_176570_1_, p_176570_2_, AbstractMinecartEntity.class, (Predicate<Entity>)null);
           if (!list.isEmpty()) {
              flag1 = true;
           }
 +      // CraftBukkit start
 +      if (flag != flag1) {
-+         org.bukkit.block.Block block = p_176570_1_.getWorld().getBlockAt(p_176570_2_.func_177958_n(), p_176570_2_.func_177956_o(), p_176570_2_.func_177952_p());
++         org.bukkit.block.Block block = p_176570_1_.getWorld().getBlockAt(p_176570_2_.getX(), p_176570_2_.getY(), p_176570_2_.getZ());
 +         BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 15 : 0, flag1 ? 15 : 0);
 +         p_176570_1_.getCBServer().getPluginManager().callEvent(eventRedstone);
 +         flag1 = eventRedstone.getNewCurrent() > 0;
@@ -29,13 +29,13 @@
 +      // CraftBukkit end
  
           if (flag1 && !flag) {
-             BlockState blockstate = p_176570_3_.func_206870_a(field_176574_M, Boolean.valueOf(true));
+             BlockState blockstate = p_176570_3_.setValue(POWERED, Boolean.valueOf(true));
 @@ -131,6 +_,8 @@
           }
  
-          List<AbstractMinecartEntity> list1 = this.func_200878_a(p_180641_2_, p_180641_3_, AbstractMinecartEntity.class, EntityPredicates.field_96566_b);
-+         List<AbstractMinecartEntity> carts = this.func_200878_a(p_180641_2_, p_180641_3_, AbstractMinecartEntity.class, null);
+          List<AbstractMinecartEntity> list1 = this.getInteractingMinecartOfType(p_180641_2_, p_180641_3_, AbstractMinecartEntity.class, EntityPredicates.CONTAINER_ENTITY_SELECTOR);
++         List<AbstractMinecartEntity> carts = this.getInteractingMinecartOfType(p_180641_2_, p_180641_3_, AbstractMinecartEntity.class, null);
 +         if (!carts.isEmpty() && carts.get(0).getComparatorLevel() > -1) return carts.get(0).getComparatorLevel();
           if (!list1.isEmpty()) {
-             return Container.func_94526_b((IInventory)list1.get(0));
+             return Container.getRedstoneSignalFromContainer((IInventory)list1.get(0));
           }

@@ -21,21 +21,21 @@
 +import org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory;
  
  public class RavagerEntity extends AbstractRaiderEntity {
-    private static final Predicate<Entity> field_213690_b = (p_213685_0_) -> {
+    private static final Predicate<Entity> NO_RAVAGER_AND_ALIVE = (p_213685_0_) -> {
 @@ -134,14 +_,14 @@
-             this.func_110148_a(Attributes.field_233821_d_).func_111128_a(MathHelper.func_219803_d(0.1D, d1, d0));
+             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(MathHelper.lerp(0.1D, d1, d0));
           }
  
--         if (this.field_70123_F && this.field_70170_p.func_82736_K().func_223586_b(GameRules.field_223599_b)) {
-+         if (this.field_70123_F && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.field_70170_p, this)) {
+-         if (this.horizontalCollision && this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
++         if (this.horizontalCollision && net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.level, this)) {
              boolean flag = false;
-             AxisAlignedBB axisalignedbb = this.func_174813_aQ().func_186662_g(0.2D);
+             AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(0.2D);
  
-             for(BlockPos blockpos : BlockPos.func_191531_b(MathHelper.func_76128_c(axisalignedbb.field_72340_a), MathHelper.func_76128_c(axisalignedbb.field_72338_b), MathHelper.func_76128_c(axisalignedbb.field_72339_c), MathHelper.func_76128_c(axisalignedbb.field_72336_d), MathHelper.func_76128_c(axisalignedbb.field_72337_e), MathHelper.func_76128_c(axisalignedbb.field_72334_f))) {
-                BlockState blockstate = this.field_70170_p.func_180495_p(blockpos);
-                Block block = blockstate.func_177230_c();
+             for(BlockPos blockpos : BlockPos.betweenClosed(MathHelper.floor(axisalignedbb.minX), MathHelper.floor(axisalignedbb.minY), MathHelper.floor(axisalignedbb.minZ), MathHelper.floor(axisalignedbb.maxX), MathHelper.floor(axisalignedbb.maxY), MathHelper.floor(axisalignedbb.maxZ))) {
+                BlockState blockstate = this.level.getBlockState(blockpos);
+                Block block = blockstate.getBlock();
 -               if (block instanceof LeavesBlock) {
-+               if (block instanceof LeavesBlock && !CraftEventFactory.callEntityChangeBlockEvent(this,blockpos, Blocks.field_150350_a.func_176223_P()).isCancelled()) { // CraftBukkit
-                   flag = this.field_70170_p.func_225521_a_(blockpos, true, this) || flag;
++               if (block instanceof LeavesBlock && !CraftEventFactory.callEntityChangeBlockEvent(this,blockpos, Blocks.AIR.defaultBlockState()).isCancelled()) { // CraftBukkit
+                   flag = this.level.destroyBlock(blockpos, true, this) || flag;
                 }
              }

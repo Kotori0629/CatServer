@@ -24,7 +24,7 @@
 +
 +   @Override
 +   public List<ItemStack> getContents() {
-+      return this.field_213966_a;
++      return this.items;
 +   }
 +
 +   @Override
@@ -43,7 +43,7 @@
 +   }
 +
 +   @Override
-+   public int func_70297_j_() {
++   public int getMaxStackSize() {
 +      return maxStack;
 +   }
 +
@@ -53,29 +53,29 @@
 +   }
 +   // CraftBukkit end
 +
-    private NonNullList<ItemStack> field_213966_a = NonNullList.func_191197_a(27, ItemStack.field_190927_a);
-    private int field_213967_b;
+    private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
+    private int openCount;
  
 @@ -76,7 +_,7 @@
  
-          ++this.field_213967_b;
-          BlockState blockstate = this.func_195044_w();
--         boolean flag = blockstate.func_177229_b(BarrelBlock.field_220093_b);
-+         boolean flag = blockstate.func_177229_b(BarrelBlock.field_220093_b) && !opened; // CraftBukkit - only set flag if Barrel isn't set open by API.
+          ++this.openCount;
+          BlockState blockstate = this.getBlockState();
+-         boolean flag = blockstate.getValue(BarrelBlock.OPEN);
++         boolean flag = blockstate.getValue(BarrelBlock.OPEN) && !opened; // CraftBukkit - only set flag if Barrel isn't set open by API.
           if (!flag) {
-             this.func_213965_a(blockstate, SoundEvents.field_219602_O);
-             this.func_213963_a(blockstate, true);
+             this.playSound(blockstate, SoundEvents.BARREL_OPEN);
+             this.updateBlockState(blockstate, true);
 @@ -121,11 +_,11 @@
  
     }
  
--   private void func_213963_a(BlockState p_213963_1_, boolean p_213963_2_) {
-+   public void func_213963_a(BlockState p_213963_1_, boolean p_213963_2_) { // private->public CraftBukkit
-       this.field_145850_b.func_180501_a(this.func_174877_v(), p_213963_1_.func_206870_a(BarrelBlock.field_220093_b, Boolean.valueOf(p_213963_2_)), 3);
+-   private void updateBlockState(BlockState p_213963_1_, boolean p_213963_2_) {
++   public void updateBlockState(BlockState p_213963_1_, boolean p_213963_2_) { // private->public CraftBukkit
+       this.level.setBlock(this.getBlockPos(), p_213963_1_.setValue(BarrelBlock.OPEN, Boolean.valueOf(p_213963_2_)), 3);
     }
  
--   private void func_213965_a(BlockState p_213965_1_, SoundEvent p_213965_2_) {
-+   public void func_213965_a(BlockState p_213965_1_, SoundEvent p_213965_2_) { // private->public CraftBukkit
-       Vector3i vector3i = p_213965_1_.func_177229_b(BarrelBlock.field_220092_a).func_176730_m();
-       double d0 = (double)this.field_174879_c.func_177958_n() + 0.5D + (double)vector3i.func_177958_n() / 2.0D;
-       double d1 = (double)this.field_174879_c.func_177956_o() + 0.5D + (double)vector3i.func_177956_o() / 2.0D;
+-   private void playSound(BlockState p_213965_1_, SoundEvent p_213965_2_) {
++   public void playSound(BlockState p_213965_1_, SoundEvent p_213965_2_) { // private->public CraftBukkit
+       Vector3i vector3i = p_213965_1_.getValue(BarrelBlock.FACING).getNormal();
+       double d0 = (double)this.worldPosition.getX() + 0.5D + (double)vector3i.getX() / 2.0D;
+       double d1 = (double)this.worldPosition.getY() + 0.5D + (double)vector3i.getY() / 2.0D;

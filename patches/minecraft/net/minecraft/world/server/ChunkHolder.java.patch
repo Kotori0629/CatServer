@@ -9,87 +9,87 @@
  import net.minecraft.util.Util;
  import net.minecraft.util.math.BlockPos;
 @@ -48,7 +_,7 @@
-    private volatile CompletableFuture<Either<Chunk, ChunkHolder.IChunkLoadingError>> field_219313_h = field_219309_d;
-    private volatile CompletableFuture<Either<Chunk, ChunkHolder.IChunkLoadingError>> field_219314_i = field_219309_d;
-    private CompletableFuture<IChunk> field_219315_j = CompletableFuture.completedFuture((IChunk)null);
--   private int field_219316_k;
-+   public int field_219316_k;
-    private int field_219317_l;
-    private int field_219318_m;
-    private final ChunkPos field_219319_n;
+    private volatile CompletableFuture<Either<Chunk, ChunkHolder.IChunkLoadingError>> tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+    private volatile CompletableFuture<Either<Chunk, ChunkHolder.IChunkLoadingError>> entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+    private CompletableFuture<IChunk> chunkToSave = CompletableFuture.completedFuture((IChunk)null);
+-   private int oldTicketLevel;
++   public int oldTicketLevel;
+    private int ticketLevel;
+    private int queueLevel;
+    private final ChunkPos pos;
 @@ -58,9 +_,10 @@
-    private int field_219325_t;
-    private final WorldLightManager field_219326_u;
-    private final ChunkHolder.IListener field_219327_v;
--   private final ChunkHolder.IPlayerProvider field_219328_w;
-+   public final ChunkHolder.IPlayerProvider field_219328_w;
-    private boolean field_219329_x;
-    private boolean field_244384_x;
+    private int skyChangedLightSectionFilter;
+    private final WorldLightManager lightEngine;
+    private final ChunkHolder.IListener onLevelChange;
+-   private final ChunkHolder.IPlayerProvider playerProvider;
++   public final ChunkHolder.IPlayerProvider playerProvider;
+    private boolean wasAccessibleSinceLastSave;
+    private boolean resendLight;
 +   Chunk currentlyLoading; //Forge - Used to bypass future chain when loading chunks.
  
     public ChunkHolder(ChunkPos p_i50716_1_, int p_i50716_2_, WorldLightManager p_i50716_3_, ChunkHolder.IListener p_i50716_4_, ChunkHolder.IPlayerProvider p_i50716_5_) {
-       this.field_219319_n = p_i50716_1_;
+       this.pos = p_i50716_1_;
 @@ -73,6 +_,21 @@
-       this.func_219292_a(p_i50716_2_);
+       this.setTicketLevel(p_i50716_2_);
     }
  
 +   // CraftBukkit start
 +   public Chunk getFullChunk() {
-+      if (!func_219286_c(this.field_219316_k).func_219065_a(LocationType.BORDER)) {
++      if (!getFullChunkStatus(this.oldTicketLevel).isOrAfter(LocationType.BORDER)) {
 +         return null; // note: using oldTicketLevel for isLoaded checks
 +      }
 +      return this.getFullChunkUnchecked();
 +   }
 +
 +   public Chunk getFullChunkUnchecked() {
-+      CompletableFuture<Either<IChunk, IChunkLoadingError>> statusFuture = this.func_219301_a(ChunkStatus.field_222617_m);
++      CompletableFuture<Either<IChunk, IChunkLoadingError>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
 +      Either<IChunk, IChunkLoadingError> either = (Either<IChunk, IChunkLoadingError>) statusFuture.getNow(null);
 +      return (either == null) ? null : (Chunk) either.left().orElse(null);
 +   }
 +   // CraftBukkit end
 +
-    public CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> func_219301_a(ChunkStatus p_219301_1_) {
-       CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> completablefuture = this.field_219312_g.get(p_219301_1_.func_222584_c());
-       return completablefuture == null ? field_219307_b : completablefuture;
+    public CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> getFutureIfPresentUnchecked(ChunkStatus p_219301_1_) {
+       CompletableFuture<Either<IChunk, ChunkHolder.IChunkLoadingError>> completablefuture = this.futures.get(p_219301_1_.getIndex());
+       return completablefuture == null ? UNLOADED_CHUNK_FUTURE : completablefuture;
 @@ -139,6 +_,7 @@
-       Chunk chunk = this.func_219298_c();
+       Chunk chunk = this.getTickingChunk();
        if (chunk != null) {
-          byte b0 = (byte)SectionPos.func_218159_a(p_244386_1_.func_177956_o());
+          byte b0 = (byte)SectionPos.blockToSectionCoord(p_244386_1_.getY());
 +         if (b0 < 0 || b0 > 15) return;
-          if (this.field_244383_q[b0] == null) {
-             this.field_244382_p = true;
-             this.field_244383_q[b0] = new ShortArraySet();
+          if (this.changedBlocksPerSection[b0] == null) {
+             this.hasChangedSections = true;
+             this.changedBlocksPerSection[b0] = new ShortArraySet();
 @@ -204,7 +_,7 @@
     }
  
-    private void func_244385_a(World p_244385_1_, BlockPos p_244385_2_, BlockState p_244385_3_) {
--      if (p_244385_3_.func_177230_c().func_235695_q_()) {
+    private void broadcastBlockEntityIfNeeded(World p_244385_1_, BlockPos p_244385_2_, BlockState p_244385_3_) {
+-      if (p_244385_3_.getBlock().isEntityBlock()) {
 +      if (p_244385_3_.hasTileEntity()) {
-          this.func_219305_a(p_244385_1_, p_244385_2_);
+          this.broadcastBlockEntity(p_244385_1_, p_244385_2_);
        }
  
 @@ -289,6 +_,30 @@
-       boolean flag1 = this.field_219317_l <= ChunkManager.field_219249_a;
-       ChunkHolder.LocationType chunkholder$locationtype = func_219286_c(this.field_219316_k);
-       ChunkHolder.LocationType chunkholder$locationtype1 = func_219286_c(this.field_219317_l);
+       boolean flag1 = this.ticketLevel <= ChunkManager.MAX_CHUNK_DISTANCE;
+       ChunkHolder.LocationType chunkholder$locationtype = getFullChunkStatus(this.oldTicketLevel);
+       ChunkHolder.LocationType chunkholder$locationtype1 = getFullChunkStatus(this.ticketLevel);
 +
 +      // CraftBukkit start
 +      // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
-+      if (chunkholder$locationtype.func_219065_a(LocationType.BORDER) && !chunkholder$locationtype1.func_219065_a(LocationType.BORDER)) {
-+         this.func_219301_a(ChunkStatus.field_222617_m).thenAccept((either) -> {
++      if (chunkholder$locationtype.isOrAfter(LocationType.BORDER) && !chunkholder$locationtype1.isOrAfter(LocationType.BORDER)) {
++         this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
 +            Chunk chunk = (Chunk) either.left().orElse(null);
 +            if (chunk != null) {
 +               p_219291_1_.callbackExecutor.execute(() -> {
 +                  // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
 +                  // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
 +                  // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-+                  chunk.func_177427_f(true);
++                  chunk.setUnsaved(true);
 +                  chunk.unloadCallback();
 +               });
 +            }
 +         }).exceptionally((throwable) -> {
 +            // ensure exceptions are printed, by default this is not the case
-+            MinecraftServer.field_147145_h.fatal("Failed to schedule unload callback for chunk " + this.field_219319_n, throwable);
++            MinecraftServer.LOGGER.fatal("Failed to schedule unload callback for chunk " + this.pos, throwable);
 +            return null;
 +         });
 +         // Run callback right away if the future was already done
@@ -101,19 +101,19 @@
              public String toString() {
 @@ -352,6 +_,23 @@
  
-       this.field_219327_v.func_219066_a(this.field_219319_n, this::func_219281_j, this.field_219317_l, this::func_219275_d);
-       this.field_219316_k = this.field_219317_l;
+       this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
+       this.oldTicketLevel = this.ticketLevel;
 +      // CraftBukkit start
 +      // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
-+      if (!chunkholder$locationtype.func_219065_a(LocationType.BORDER) && chunkholder$locationtype1.func_219065_a(LocationType.BORDER)) {
-+         this.func_219301_a(ChunkStatus.field_222617_m).thenAccept((either) -> {
++      if (!chunkholder$locationtype.isOrAfter(LocationType.BORDER) && chunkholder$locationtype1.isOrAfter(LocationType.BORDER)) {
++         this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
 +            Chunk chunk = (Chunk) either.left().orElse(null);
 +            if (chunk != null) {
 +               p_219291_1_.callbackExecutor.execute(chunk::loadCallback);
 +            }
 +         }).exceptionally((throwable) -> {
 +            // ensure exceptions are printed, by default this is not the case
-+            MinecraftServer.field_147145_h.fatal("Failed to schedule load callback for chunk " + this.field_219319_n, throwable);
++            MinecraftServer.LOGGER.fatal("Failed to schedule load callback for chunk " + this.pos, throwable);
 +            return null;
 +         });
 +         // Run callback right away if the future was already done
@@ -122,4 +122,4 @@
 +      // CraftBukkit end
     }
  
-    public static ChunkStatus func_219278_b(int p_219278_0_) {
+    public static ChunkStatus getStatus(int p_219278_0_) {

@@ -11,19 +11,19 @@
 @@ -52,7 +_,17 @@
           return ActionResultType.PASS;
        } else {
-          p_226911_4_.func_195066_a(Stats.field_188076_J);
--         p_226911_4_.func_71024_bL().func_75122_a(2, 0.1F);
+          p_226911_4_.awardStat(Stats.EAT_CAKE_SLICE);
+-         p_226911_4_.getFoodData().eat(2, 0.1F);
 +         // CraftBukkit start
-+         int oldFoodLevel = p_226911_4_.func_71024_bL().field_75127_a;
++         int oldFoodLevel = p_226911_4_.getFoodData().foodLevel;
 +
 +         org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callFoodLevelChangeEvent(p_226911_4_, 2 + oldFoodLevel);
 +
 +         if (!event.isCancelled()) {
-+            p_226911_4_.func_71024_bL().func_75122_a(event.getFoodLevel() - oldFoodLevel, 0.1F);
++            p_226911_4_.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 0.1F);
 +         }
 +
 +         ((ServerPlayerEntity) p_226911_4_).getBukkitEntity().sendHealthUpdate();
 +         // CraftBukkit end
-          int i = p_226911_3_.func_177229_b(field_176589_a);
+          int i = p_226911_3_.getValue(BITES);
           if (i < 6) {
-             p_226911_1_.func_180501_a(p_226911_2_, p_226911_3_.func_206870_a(field_176589_a, Integer.valueOf(i + 1)), 3);
+             p_226911_1_.setBlock(p_226911_2_, p_226911_3_.setValue(BITES, Integer.valueOf(i + 1)), 3);

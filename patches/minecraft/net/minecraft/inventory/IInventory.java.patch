@@ -25,8 +25,8 @@
 +
 +   default org.bukkit.Location getLocation() {
 +      if (this instanceof net.minecraft.tileentity.TileEntity) {
-+         net.minecraft.util.math.BlockPos pos = ((net.minecraft.tileentity.TileEntity) this).func_174877_v();
-+         return new org.bukkit.Location(((net.minecraft.tileentity.TileEntity) this).func_145831_w().getWorld(), pos.func_177958_n(), pos.func_177956_o(), pos.func_177952_p());
++         net.minecraft.util.math.BlockPos pos = ((net.minecraft.tileentity.TileEntity) this).getBlockPos();
++         return new org.bukkit.Location(((net.minecraft.tileentity.TileEntity) this).getLevel().getWorld(), pos.getX(), pos.getY(), pos.getZ());
 +      } else {
 +         return null;
 +      }

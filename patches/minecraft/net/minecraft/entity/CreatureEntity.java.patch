@@ -10,18 +10,18 @@
  public abstract class CreatureEntity extends MobEntity {
     protected CreatureEntity(EntityType<? extends CreatureEntity> p_i48575_1_, World p_i48575_2_) {
 @@ -37,6 +_,7 @@
-          float f = this.func_70032_d(entity);
-          if (this instanceof TameableEntity && ((TameableEntity)this).func_233684_eK_()) {
+          float f = this.distanceTo(entity);
+          if (this instanceof TameableEntity && ((TameableEntity)this).isInSittingPose()) {
              if (f > 10.0F) {
-+               this.field_70170_p.getCBServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.DISTANCE)); // CraftBukkit
-                this.func_110160_i(true, true);
++               this.level.getCBServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.DISTANCE)); // CraftBukkit
+                this.dropLeash(true, true);
              }
  
 @@ -45,6 +_,7 @@
  
-          this.func_142017_o(f);
+          this.onLeashDistance(f);
           if (f > 10.0F) {
-+            this.field_70170_p.getCBServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.DISTANCE)); // CraftBukkit
-             this.func_110160_i(true, true);
-             this.field_70714_bg.func_220880_a(Goal.Flag.MOVE);
++            this.level.getCBServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.DISTANCE)); // CraftBukkit
+             this.dropLeash(true, true);
+             this.goalSelector.disableControlFlag(Goal.Flag.MOVE);
           } else if (f > 6.0F) {

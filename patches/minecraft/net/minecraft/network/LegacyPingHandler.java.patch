@@ -8,35 +8,35 @@
 +import org.bukkit.event.server.ServerListPingEvent;
  
  public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
-    private static final Logger field_151258_a = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 @@ -29,10 +_,11 @@
              InetSocketAddress inetsocketaddress = (InetSocketAddress)p_channelRead_1_.channel().remoteAddress();
-             MinecraftServer minecraftserver = this.field_151257_b.func_151267_d();
+             MinecraftServer minecraftserver = this.serverConnectionListener.getServer();
              int i = bytebuf.readableBytes();
-+            ServerListPingEvent event = CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.func_71273_Y(), minecraftserver.func_71233_x(), minecraftserver.func_71275_y()); // CraftBukkit
++            ServerListPingEvent event = CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers()); // CraftBukkit
              switch(i) {
              case 0:
-                field_151258_a.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--               String s2 = String.format("%s\u00a7%d\u00a7%d", minecraftserver.func_71273_Y(), minecraftserver.func_71233_x(), minecraftserver.func_71275_y());
+                LOGGER.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
+-               String s2 = String.format("%s\u00a7%d\u00a7%d", minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers());
 +               String s2 = String.format("%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-                this.func_151256_a(p_channelRead_1_, this.func_151255_a(s2));
+                this.sendFlushAndClose(p_channelRead_1_, this.createReply(s2));
                 break;
              case 1:
 @@ -41,7 +_,7 @@
                 }
  
-                field_151258_a.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--               String s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.func_71249_w(), minecraftserver.func_71273_Y(), minecraftserver.func_71233_x(), minecraftserver.func_71275_y());
-+               String s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.func_71249_w(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-                this.func_151256_a(p_channelRead_1_, this.func_151255_a(s));
+                LOGGER.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
+-               String s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers());
++               String s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
+                this.sendFlushAndClose(p_channelRead_1_, this.createReply(s));
                 break;
              default:
 @@ -58,7 +_,7 @@
                 }
  
-                field_151258_a.debug("Ping: (1.6) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--               String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.func_71249_w(), minecraftserver.func_71273_Y(), minecraftserver.func_71233_x(), minecraftserver.func_71275_y());
-+               String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.func_71249_w(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-                ByteBuf bytebuf1 = this.func_151255_a(s1);
+                LOGGER.debug("Ping: (1.6) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
+-               String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers());
++               String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
+                ByteBuf bytebuf1 = this.createReply(s1);
  
                 try {

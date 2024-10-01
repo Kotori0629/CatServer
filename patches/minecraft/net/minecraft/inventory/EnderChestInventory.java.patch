@@ -8,7 +8,7 @@
 +import org.bukkit.inventory.InventoryHolder;
  
  public class EnderChestInventory extends Inventory {
-    private EnderChestTileEntity field_70488_a;
+    private EnderChestTileEntity activeChest;
  
 +   // CraftBukkit start
 +   private final PlayerEntity owner;
@@ -21,7 +21,7 @@
 +
 +   @Override
 +   public Location getLocation() {
-+      return this.field_70488_a != null ?new Location(this.field_70488_a.func_145831_w().getWorld(), this.field_70488_a.func_174877_v().func_177958_n(), this.field_70488_a.func_174877_v().func_177956_o(), this.field_70488_a.func_174877_v().func_177952_p()) : null;
++      return this.activeChest != null ?new Location(this.activeChest.getLevel().getWorld(), this.activeChest.getBlockPos().getX(), this.activeChest.getBlockPos().getY(), this.activeChest.getBlockPos().getZ()) : null;
 +   }
 +
     public EnderChestInventory() {
@@ -34,4 +34,4 @@
 +      // CraftBukkit end
     }
  
-    public void func_146031_a(EnderChestTileEntity p_146031_1_) {
+    public void setActiveChest(EnderChestTileEntity p_146031_1_) {

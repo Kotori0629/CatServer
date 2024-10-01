@@ -16,10 +16,10 @@
 +import org.bukkit.event.player.PlayerVelocityEvent;
  
  public class TrackedEntity {
-    private static final Logger field_219459_a = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 @@ -58,7 +_,15 @@
-    private boolean field_219475_q;
-    private boolean field_219476_r;
+    private boolean wasRiding;
+    private boolean wasOnGround;
  
 +   // CraftBukkit Start
 +   private Set<ServerPlayerEntity> trackedPlayers;
@@ -30,96 +30,96 @@
 +
     public TrackedEntity(ServerWorld p_i50704_1_, Entity p_i50704_2_, int p_i50704_3_, boolean p_i50704_4_, Consumer<IPacket<?>> p_i50704_5_) {
 +      this.trackedPlayers = new HashSet<>();
-       this.field_219460_b = p_i50704_1_;
-       this.field_219464_f = p_i50704_5_;
-       this.field_219461_c = p_i50704_2_;
+       this.level = p_i50704_1_;
+       this.broadcast = p_i50704_5_;
+       this.entity = p_i50704_2_;
 @@ -75,24 +_,25 @@
-       List<Entity> list = this.field_219461_c.func_184188_bt();
-       if (!list.equals(this.field_219474_p)) {
-          this.field_219474_p = list;
--         this.field_219464_f.accept(new SSetPassengersPacket(this.field_219461_c));
-+         this.func_219451_a(new SSetPassengersPacket(this.field_219461_c)); // CraftBukkit
+       List<Entity> list = this.entity.getPassengers();
+       if (!list.equals(this.lastPassengers)) {
+          this.lastPassengers = list;
+-         this.broadcast.accept(new SSetPassengersPacket(this.entity));
++         this.broadcastAndSend(new SSetPassengersPacket(this.entity)); // CraftBukkit
        }
  
--      if (this.field_219461_c instanceof ItemFrameEntity && this.field_219472_n % 10 == 0) {
+-      if (this.entity instanceof ItemFrameEntity && this.tickCount % 10 == 0) {
 +      // PAIL : rename
-+      if (this.field_219461_c instanceof ItemFrameEntity /*&& this.updateCounter % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
-          ItemFrameEntity itemframeentity = (ItemFrameEntity)this.field_219461_c;
-          ItemStack itemstack = itemframeentity.func_82335_i();
--         if (itemstack.func_77973_b() instanceof FilledMapItem) {
-+         if (this.field_219472_n % 10 == 0 && itemstack.func_77973_b() instanceof FilledMapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
-             MapData mapdata = FilledMapItem.func_195950_a(itemstack, this.field_219460_b);
++      if (this.entity instanceof ItemFrameEntity /*&& this.updateCounter % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
+          ItemFrameEntity itemframeentity = (ItemFrameEntity)this.entity;
+          ItemStack itemstack = itemframeentity.getItem();
+-         if (itemstack.getItem() instanceof FilledMapItem) {
++         if (this.tickCount % 10 == 0 && itemstack.getItem() instanceof FilledMapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
+             MapData mapdata = FilledMapItem.getOrCreateSavedData(itemstack, this.level);
 -
--            for(ServerPlayerEntity serverplayerentity : this.field_219460_b.func_217369_A()) {
--               mapdata.func_76191_a(serverplayerentity, itemstack);
--               IPacket<?> ipacket = ((FilledMapItem)itemstack.func_77973_b()).func_150911_c(itemstack, this.field_219460_b, serverplayerentity);
+-            for(ServerPlayerEntity serverplayerentity : this.level.players()) {
+-               mapdata.tickCarriedBy(serverplayerentity, itemstack);
+-               IPacket<?> ipacket = ((FilledMapItem)itemstack.getItem()).getUpdatePacket(itemstack, this.level, serverplayerentity);
 -               if (ipacket != null) {
--                  serverplayerentity.field_71135_a.func_147359_a(ipacket);
+-                  serverplayerentity.connection.send(ipacket);
 +            if (mapdata != null) {
 +               for(ServerPlayerEntity serverplayerentity : this.trackedPlayers) {  // CraftBukkit
-+                  mapdata.func_76191_a(serverplayerentity, itemstack);
-+                  IPacket<?> ipacket = ((FilledMapItem) itemstack.func_77973_b()).func_150911_c(itemstack, this.field_219460_b, serverplayerentity);
++                  mapdata.tickCarriedBy(serverplayerentity, itemstack);
++                  IPacket<?> ipacket = ((FilledMapItem) itemstack.getItem()).getUpdatePacket(itemstack, this.level, serverplayerentity);
 +                  if (ipacket != null) {
-+                     serverplayerentity.field_71135_a.func_147359_a(ipacket);
++                     serverplayerentity.connection.send(ipacket);
 +                  }
                 }
              }
           }
 -
-          this.func_219457_c();
+          this.sendDirtyEntityData();
        }
  
 @@ -119,6 +_,18 @@
              IPacket<?> ipacket1 = null;
-             boolean flag4 = flag3 || this.field_219472_n % 60 == 0;
-             boolean flag = Math.abs(l - this.field_219468_j) >= 1 || Math.abs(k1 - this.field_219469_k) >= 1;
+             boolean flag4 = flag3 || this.tickCount % 60 == 0;
+             boolean flag = Math.abs(l - this.yRotp) >= 1 || Math.abs(k1 - this.xRotp) >= 1;
 +
 +            // CraftBukkit start - Code moved from below
 +            if (flag4) {
-+               this.func_219458_d();
++               this.updateSentPos();
 +            }
 +
 +            if (flag) {
-+               this.field_219468_j = l;
-+               this.field_219469_k = k1;
++               this.yRotp = l;
++               this.xRotp = k1;
 +            }
 +            // CraftBukkit end
 +
-             if (this.field_219472_n > 0 || this.field_219461_c instanceof AbstractArrowEntity) {
-                long i = SEntityPacket.func_218743_a(vector3d.field_72450_a);
-                long j = SEntityPacket.func_218743_a(vector3d.field_72448_b);
+             if (this.tickCount > 0 || this.entity instanceof AbstractArrowEntity) {
+                long i = SEntityPacket.entityToPacket(vector3d.x);
+                long j = SEntityPacket.entityToPacket(vector3d.y);
 @@ -155,14 +_,16 @@
              }
  
-             this.func_219457_c();
+             this.sendDirtyEntityData();
 +             /* CraftBukkit start - Code moved up
              if (flag4) {
--               this.func_219458_d();
+-               this.updateSentPos();
 +               this.updateEncodedPosition();
              }
  
              if (flag) {
--               this.field_219468_j = l;
--               this.field_219469_k = k1;
+-               this.yRotp = l;
+-               this.xRotp = k1;
 +               this.encodedRotationYaw = l;
 +               this.encodedRotationPitch = k1;
              }
 +            // CraftBukkit end */
  
-             this.field_219475_q = false;
+             this.wasRiding = false;
           }
 @@ -178,7 +_,23 @@
  
-       ++this.field_219472_n;
-       if (this.field_219461_c.field_70133_I) {
--         this.func_219451_a(new SEntityVelocityPacket(this.field_219461_c));
+       ++this.tickCount;
+       if (this.entity.hurtMarked) {
+-         this.broadcastAndSend(new SEntityVelocityPacket(this.entity));
 +         // CraftBukkit start - Create PlayerVelocity event
 +         boolean cancelled = false;
-+         if (this.field_219461_c instanceof ServerPlayerEntity) {
-+            Player player = (Player) this.field_219461_c.getBukkitEntity();
++         if (this.entity instanceof ServerPlayerEntity) {
++            Player player = (Player) this.entity.getBukkitEntity();
 +            org.bukkit.util.Vector velocity = player.getVelocity();
 +            PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
-+            this.field_219461_c.field_70170_p.getCBServer().getPluginManager().callEvent(event);
++            this.entity.level.getCBServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +               cancelled = true;
 +            } else if (!velocity.equals(event.getVelocity())) {
@@ -127,84 +127,84 @@
 +            }
 +         }
 +         if (!cancelled) {
-+            this.func_219451_a(new SEntityVelocityPacket(this.field_219461_c));
++            this.broadcastAndSend(new SEntityVelocityPacket(this.entity));
 +         }
 +         // CraftBukkit end
-          this.field_219461_c.field_70133_I = false;
+          this.entity.hurtMarked = false;
        }
  
 @@ -187,17 +_,31 @@
-    public void func_219454_a(ServerPlayerEntity p_219454_1_) {
-       this.field_219461_c.func_184203_c(p_219454_1_);
-       p_219454_1_.func_152339_d(this.field_219461_c);
-+      net.minecraftforge.event.ForgeEventFactory.onStopEntityTracking(this.field_219461_c, p_219454_1_);
+    public void removePairing(ServerPlayerEntity p_219454_1_) {
+       this.entity.stopSeenByPlayer(p_219454_1_);
+       p_219454_1_.sendRemoveEntity(this.entity);
++      net.minecraftforge.event.ForgeEventFactory.onStopEntityTracking(this.entity, p_219454_1_);
     }
  
-    public void func_219455_b(ServerPlayerEntity p_219455_1_) {
+    public void addPairing(ServerPlayerEntity p_219455_1_) {
 +      sendSpawnPacketsPlayer = p_219455_1_;
-       this.func_219452_a(p_219455_1_.field_71135_a::func_147359_a);
-       this.field_219461_c.func_184178_b(p_219455_1_);
-       p_219455_1_.func_184848_d(this.field_219461_c);
+       this.sendPairingData(p_219455_1_.connection::send);
+       this.entity.startSeenByPlayer(p_219455_1_);
+       p_219455_1_.cancelRemoveEntity(this.entity);
 -   }
 -
-+      net.minecraftforge.event.ForgeEventFactory.onStartEntityTracking(this.field_219461_c, p_219455_1_);
++      net.minecraftforge.event.ForgeEventFactory.onStartEntityTracking(this.entity, p_219455_1_);
 +   }
 +
 +   public void a(Consumer<IPacket<?>> packetConsumer, ServerPlayerEntity player) {
 +      sendSpawnPacketsPlayer = player;
-+      func_219452_a(packetConsumer);
++      sendPairingData(packetConsumer);
 +   }
 +
 +   ServerPlayerEntity sendSpawnPacketsPlayer;
-    public void func_219452_a(Consumer<IPacket<?>> p_219452_1_) {
+    public void sendPairingData(Consumer<IPacket<?>> p_219452_1_) {
 +      ServerPlayerEntity serverPlayerEntity = sendSpawnPacketsPlayer;
 +      sendSpawnPacketsPlayer = null;
-       if (this.field_219461_c.field_70128_L) {
--         field_219459_a.warn("Fetching packet for removed entity " + this.field_219461_c);
+       if (this.entity.removed) {
+-         LOGGER.warn("Fetching packet for removed entity " + this.entity);
 +         // CraftBukkit start - Remove useless error spam, just return
 +         //LOGGER.warn("Fetching packet for removed entity " + this.trackedEntity);
 +         return;
 +         // CraftBukkit end
        }
  
-       IPacket<?> ipacket = this.field_219461_c.func_213297_N();
+       IPacket<?> ipacket = this.entity.getAddEntityPacket();
 @@ -210,6 +_,13 @@
-       boolean flag = this.field_219463_e;
-       if (this.field_219461_c instanceof LivingEntity) {
-          Collection<ModifiableAttributeInstance> collection = ((LivingEntity)this.field_219461_c).func_233645_dx_().func_233789_b_();
+       boolean flag = this.trackDelta;
+       if (this.entity instanceof LivingEntity) {
+          Collection<ModifiableAttributeInstance> collection = ((LivingEntity)this.entity).getAttributes().getSyncableAttributes();
 +
 +         // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
-+         if (this.field_219461_c.func_145782_y() == serverPlayerEntity.func_145782_y()) {
-+            ((ServerPlayerEntity) this.field_219461_c).getBukkitEntity().injectScaledMaxHealth(collection, false);
++         if (this.entity.getId() == serverPlayerEntity.getId()) {
++            ((ServerPlayerEntity) this.entity).getBukkitEntity().injectScaledMaxHealth(collection, false);
 +         }
 +         // CraftBukkit end
 +
           if (!collection.isEmpty()) {
-             p_219452_1_.accept(new SEntityPropertiesPacket(this.field_219461_c.func_145782_y(), collection));
+             p_219452_1_.accept(new SEntityPropertiesPacket(this.entity.getId(), collection));
           }
 @@ -237,7 +_,13 @@
           if (!list.isEmpty()) {
-             p_219452_1_.accept(new SEntityEquipmentPacket(this.field_219461_c.func_145782_y(), list));
+             p_219452_1_.accept(new SEntityEquipmentPacket(this.entity.getId(), list));
           }
-+         ((LivingEntity) this.field_219461_c).func_241353_q_(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
++         ((LivingEntity) this.entity).detectEquipmentUpdates(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
        }
 +
 +      // CraftBukkit start - Fix for nonsensical head yaw
-+      this.field_219470_l = MathHelper.func_76141_d(this.field_219461_c.func_70079_am() * 256.0F / 360.0F);
-+      p_219452_1_.accept(new SEntityHeadLookPacket(this.field_219461_c, (byte) field_219470_l));
++      this.yHeadRotp = MathHelper.floor(this.entity.getYHeadRot() * 256.0F / 360.0F);
++      p_219452_1_.accept(new SEntityHeadLookPacket(this.entity, (byte) yHeadRotp));
 +      // CraftBukkit end
  
-       if (this.field_219461_c instanceof LivingEntity) {
-          LivingEntity livingentity = (LivingEntity)this.field_219461_c;
+       if (this.entity instanceof LivingEntity) {
+          LivingEntity livingentity = (LivingEntity)this.entity;
 @@ -273,6 +_,11 @@
-       if (this.field_219461_c instanceof LivingEntity) {
-          Set<ModifiableAttributeInstance> set = ((LivingEntity)this.field_219461_c).func_233645_dx_().func_233778_a_();
+       if (this.entity instanceof LivingEntity) {
+          Set<ModifiableAttributeInstance> set = ((LivingEntity)this.entity).getAttributes().getDirtyAttributes();
           if (!set.isEmpty()) {
 +            // CraftBukkit start - Send scaled max health
-+            if (this.field_219461_c instanceof ServerPlayerEntity) {
-+               ((ServerPlayerEntity) this.field_219461_c).getBukkitEntity().injectScaledMaxHealth(set, false);
++            if (this.entity instanceof ServerPlayerEntity) {
++               ((ServerPlayerEntity) this.entity).getBukkitEntity().injectScaledMaxHealth(set, false);
 +            }
 +            // CraftBukkit end
-             this.func_219451_a(new SEntityPropertiesPacket(this.field_219461_c.func_145782_y(), set));
+             this.broadcastAndSend(new SEntityPropertiesPacket(this.entity.getId(), set));
           }
  

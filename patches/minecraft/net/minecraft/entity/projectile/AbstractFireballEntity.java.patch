@@ -4,16 +4,16 @@
  
     }
  
--   protected ItemStack func_213896_l() {
-+   public ItemStack func_213896_l() {
-       return this.func_184212_Q().func_187225_a(field_213899_f);
+-   protected ItemStack getItemRaw() {
++   public ItemStack getItemRaw() {
+       return this.getEntityData().get(DATA_ITEM_STACK);
     }
  
 @@ -68,6 +_,6 @@
-    public void func_70037_a(CompoundNBT p_70037_1_) {
-       super.func_70037_a(p_70037_1_);
-       ItemStack itemstack = ItemStack.func_199557_a(p_70037_1_.func_74775_l("Item"));
--      this.func_213898_b(itemstack);
-+      if (!itemstack.func_190926_b())  this.func_213898_b(itemstack); // CraftBukkit - SPIGOT-5474 probably came from bugged earlier versions
+    public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
+       super.readAdditionalSaveData(p_70037_1_);
+       ItemStack itemstack = ItemStack.of(p_70037_1_.getCompound("Item"));
+-      this.setItem(itemstack);
++      if (!itemstack.isEmpty())  this.setItem(itemstack); // CraftBukkit - SPIGOT-5474 probably came from bugged earlier versions
     }
  }

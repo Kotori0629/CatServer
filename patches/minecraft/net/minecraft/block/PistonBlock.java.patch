@@ -19,14 +19,14 @@
 +import org.bukkit.event.block.BlockPistonRetractEvent;
  
  public class PistonBlock extends DirectionalBlock {
-    public static final BooleanProperty field_176320_b = BlockStateProperties.field_208181_h;
+    public static final BooleanProperty EXTENDED = BlockStateProperties.EXTENDED;
 @@ -116,6 +_,17 @@
              }
           }
  
 +         // CraftBukkit start
-+         if (!this.field_150082_a) {
-+            org.bukkit.block.Block block = p_176316_1_.getWorld().getBlockAt(p_176316_2_.func_177958_n(), p_176316_2_.func_177956_o(), p_176316_2_.func_177952_p());
++         if (!this.isSticky) {
++            org.bukkit.block.Block block = p_176316_1_.getWorld().getBlockAt(p_176316_2_.getX(), p_176316_2_.getY(), p_176316_2_.getZ());
 +            BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.of(), CraftBlock.notchToBlockFace(direction));
 +            p_176316_1_.getCBServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
@@ -35,7 +35,7 @@
 +         }
 +         // CraftBukkit end
 +
-          p_176316_1_.func_175641_c(p_176316_2_, this, i, direction.func_176745_a());
+          p_176316_1_.blockEvent(p_176316_2_, this, i, direction.get3DDataValue());
        }
  
 @@ -158,6 +_,7 @@
@@ -43,19 +43,19 @@
  
        if (p_189539_4_ == 0) {
 +         if (net.minecraftforge.event.ForgeEventFactory.onPistonMovePre(p_189539_2_, p_189539_3_, direction, true)) return false;
-          if (!this.func_176319_a(p_189539_2_, p_189539_3_, direction, true)) {
+          if (!this.moveBlocks(p_189539_2_, p_189539_3_, direction, true)) {
              return false;
           }
 @@ -165,6 +_,7 @@
-          p_189539_2_.func_180501_a(p_189539_3_, p_189539_1_.func_206870_a(field_176320_b, Boolean.valueOf(true)), 67);
-          p_189539_2_.func_184133_a((PlayerEntity)null, p_189539_3_, SoundEvents.field_187715_dR, SoundCategory.BLOCKS, 0.5F, p_189539_2_.field_73012_v.nextFloat() * 0.25F + 0.6F);
+          p_189539_2_.setBlock(p_189539_3_, p_189539_1_.setValue(EXTENDED, Boolean.valueOf(true)), 67);
+          p_189539_2_.playSound((PlayerEntity)null, p_189539_3_, SoundEvents.PISTON_EXTEND, SoundCategory.BLOCKS, 0.5F, p_189539_2_.random.nextFloat() * 0.25F + 0.6F);
        } else if (p_189539_4_ == 1 || p_189539_4_ == 2) {
 +         if (net.minecraftforge.event.ForgeEventFactory.onPistonMovePre(p_189539_2_, p_189539_3_, direction, false)) return false;
-          TileEntity tileentity1 = p_189539_2_.func_175625_s(p_189539_3_.func_177972_a(direction));
+          TileEntity tileentity1 = p_189539_2_.getBlockEntity(p_189539_3_.relative(direction));
           if (tileentity1 instanceof PistonTileEntity) {
-             ((PistonTileEntity)tileentity1).func_145866_f();
+             ((PistonTileEntity)tileentity1).finalTick();
 @@ -204,6 +_,7 @@
-          p_189539_2_.func_184133_a((PlayerEntity)null, p_189539_3_, SoundEvents.field_187712_dQ, SoundCategory.BLOCKS, 0.5F, p_189539_2_.field_73012_v.nextFloat() * 0.15F + 0.6F);
+          p_189539_2_.playSound((PlayerEntity)null, p_189539_3_, SoundEvents.PISTON_CONTRACT, SoundCategory.BLOCKS, 0.5F, p_189539_2_.random.nextFloat() * 0.15F + 0.6F);
        }
  
 +      net.minecraftforge.event.ForgeEventFactory.onPistonMovePost(p_189539_2_, p_189539_3_, direction, (p_189539_4_ == 0));
@@ -66,19 +66,19 @@
                    return false;
                 }
  
--               return !p_185646_0_.func_177230_c().func_235695_q_();
+-               return !p_185646_0_.getBlock().isEntityBlock();
 +               return !p_185646_0_.hasTileEntity();
              }
           } else {
              return false;
 @@ -270,10 +_,49 @@
-          Direction direction = p_176319_4_ ? p_176319_3_ : p_176319_3_.func_176734_d();
+          Direction direction = p_176319_4_ ? p_176319_3_ : p_176319_3_.getOpposite();
           int j = 0;
  
 +         // CraftBukkit start
-+         final org.bukkit.block.Block bblock = p_176319_1_.getWorld().getBlockAt(p_176319_2_.func_177958_n(), p_176319_2_.func_177956_o(), p_176319_2_.func_177952_p());
-+         final List<BlockPos> moved = pistonblockstructurehelper.func_177254_c();
-+         final List<BlockPos> broken = pistonblockstructurehelper.func_177252_d();
++         final org.bukkit.block.Block bblock = p_176319_1_.getWorld().getBlockAt(p_176319_2_.getX(), p_176319_2_.getY(), p_176319_2_.getZ());
++         final List<BlockPos> moved = pistonblockstructurehelper.getToPush();
++         final List<BlockPos> broken = pistonblockstructurehelper.getToDestroy();
 +         List<org.bukkit.block.Block> blocks = new AbstractList<org.bukkit.block.Block>() {
 +            @Override
 +            public int size() {
@@ -91,7 +91,7 @@
 +                  throw new ArrayIndexOutOfBoundsException(index);
 +               }
 +               BlockPos pos = (BlockPos) (index < moved.size() ? moved.get(index) : broken.get(index - moved.size()));
-+               return bblock.getWorld().getBlockAt(pos.func_177958_n(), pos.func_177956_o(), pos.func_177952_p());
++               return bblock.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 +            }
 +         };
 +         org.bukkit.event.block.BlockPistonEvent event;
@@ -103,12 +103,12 @@
 +         p_176319_1_.getCBServer().getPluginManager().callEvent(event);
 +         if (event.isCancelled()) {
 +            for (BlockPos b : broken) {
-+               p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
++               p_176319_1_.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), p_176319_1_.getBlockState(b), 3);
 +            }
 +            for (BlockPos b : moved) {
-+               p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
-+               b = b.func_177972_a(direction);
-+               p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
++               p_176319_1_.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), p_176319_1_.getBlockState(b), 3);
++               b = b.relative(direction);
++               p_176319_1_.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), p_176319_1_.getBlockState(b), 3);
 +            }
 +            return false;
 +         }
@@ -116,20 +116,20 @@
 +
           for(int k = list2.size() - 1; k >= 0; --k) {
              BlockPos blockpos2 = list2.get(k);
-             BlockState blockstate1 = p_176319_1_.func_180495_p(blockpos2);
--            TileEntity tileentity = blockstate1.func_177230_c().func_235695_q_() ? p_176319_1_.func_175625_s(blockpos2) : null;
-+            TileEntity tileentity = blockstate1.hasTileEntity() ? p_176319_1_.func_175625_s(blockpos2) : null;
-             func_220059_a(blockstate1, p_176319_1_, blockpos2, tileentity);
-             p_176319_1_.func_180501_a(blockpos2, Blocks.field_150350_a.func_176223_P(), 18);
+             BlockState blockstate1 = p_176319_1_.getBlockState(blockpos2);
+-            TileEntity tileentity = blockstate1.getBlock().isEntityBlock() ? p_176319_1_.getBlockEntity(blockpos2) : null;
++            TileEntity tileentity = blockstate1.hasTileEntity() ? p_176319_1_.getBlockEntity(blockpos2) : null;
+             dropResources(blockstate1, p_176319_1_, blockpos2, tileentity);
+             p_176319_1_.setBlock(blockpos2, Blocks.AIR.defaultBlockState(), 18);
              ablockstate[j++] = blockstate1;
 @@ -335,6 +_,10 @@
  
-    public BlockState func_185499_a(BlockState p_185499_1_, Rotation p_185499_2_) {
-       return p_185499_1_.func_206870_a(field_176387_N, p_185499_2_.func_185831_a(p_185499_1_.func_177229_b(field_176387_N)));
+    public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
+       return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
 +   }
 +
 +   public BlockState rotate(BlockState state, net.minecraft.world.IWorld world, BlockPos pos, Rotation direction) {
-+       return state.func_177229_b(field_176320_b) ? state : super.rotate(state, world, pos, direction);
++       return state.getValue(EXTENDED) ? state : super.rotate(state, world, pos, direction);
     }
  
-    public BlockState func_185471_a(BlockState p_185471_1_, Mirror p_185471_2_) {
+    public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {

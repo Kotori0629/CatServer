@@ -26,18 +26,18 @@
 +import org.bukkit.event.entity.EntityExplodeEvent;
  
  public class Explosion {
-    private static final ExplosionContext field_242407_a = new ExplosionContext();
+    private static final ExplosionContext EXPLOSION_DAMAGE_CALCULATOR = new ExplosionContext();
 @@ -52,12 +_,15 @@
-    private final double field_77285_c;
-    private final double field_77282_d;
+    private final double y;
+    private final double z;
     @Nullable
--   private final Entity field_77283_e;
-+   public final Entity field_77283_e;
-    private final float field_77280_f;
-    private final DamageSource field_199593_j;
-    private final ExplosionContext field_234893_k_;
-    private final List<BlockPos> field_77281_g = Lists.newArrayList();
-    private final Map<PlayerEntity, Vector3d> field_77288_k = Maps.newHashMap();
+-   private final Entity source;
++   public final Entity source;
+    private final float radius;
+    private final DamageSource damageSource;
+    private final ExplosionContext damageCalculator;
+    private final List<BlockPos> toBlow = Lists.newArrayList();
+    private final Map<PlayerEntity, Vector3d> hitPlayers = Maps.newHashMap();
 +   private final Vector3d position;
 +
 +   public boolean wasCanceled = false; // CraftBukkit - add field
@@ -46,27 +46,27 @@
     public Explosion(World p_i45752_1_, @Nullable Entity p_i45752_2_, double p_i45752_3_, double p_i45752_5_, double p_i45752_7_, float p_i45752_9_, List<BlockPos> p_i45752_10_) {
 @@ -78,7 +_,7 @@
     public Explosion(World p_i231610_1_, @Nullable Entity p_i231610_2_, @Nullable DamageSource p_i231610_3_, @Nullable ExplosionContext p_i231610_4_, double p_i231610_5_, double p_i231610_7_, double p_i231610_9_, float p_i231610_11_, boolean p_i231610_12_, Explosion.Mode p_i231610_13_) {
-       this.field_77287_j = p_i231610_1_;
-       this.field_77283_e = p_i231610_2_;
--      this.field_77280_f = p_i231610_11_;
-+      this.field_77280_f =  (float) Math.max(p_i231610_11_, 0.0); // CraftBukkit - clamp bad values
-       this.field_77284_b = p_i231610_5_;
-       this.field_77285_c = p_i231610_7_;
-       this.field_77282_d = p_i231610_9_;
+       this.level = p_i231610_1_;
+       this.source = p_i231610_2_;
+-      this.radius = p_i231610_11_;
++      this.radius =  (float) Math.max(p_i231610_11_, 0.0); // CraftBukkit - clamp bad values
+       this.x = p_i231610_5_;
+       this.y = p_i231610_7_;
+       this.z = p_i231610_9_;
 @@ -86,6 +_,7 @@
-       this.field_222260_b = p_i231610_13_;
-       this.field_199593_j = p_i231610_3_ == null ? DamageSource.func_94539_a(this) : p_i231610_3_;
-       this.field_234893_k_ = p_i231610_4_ == null ? this.func_234894_a_(p_i231610_2_) : p_i231610_4_;
-+      this.position = new Vector3d(this.field_77284_b, this.field_77285_c, this.field_77282_d);
+       this.blockInteraction = p_i231610_13_;
+       this.damageSource = p_i231610_3_ == null ? DamageSource.explosion(this) : p_i231610_3_;
+       this.damageCalculator = p_i231610_4_ == null ? this.makeDamageCalculator(p_i231610_2_) : p_i231610_4_;
++      this.position = new Vector3d(this.x, this.y, this.z);
     }
  
-    private ExplosionContext func_234894_a_(@Nullable Entity p_234894_1_) {
+    private ExplosionContext makeDamageCalculator(@Nullable Entity p_234894_1_) {
 @@ -126,6 +_,11 @@
     }
  
-    public void func_77278_a() {
+    public void explode() {
 +      // CraftBukkit start
-+      if (this.field_77280_f < 0.1F) {
++      if (this.radius < 0.1F) {
 +         return;
 +      }
 +      // CraftBukkit end
@@ -77,31 +77,31 @@
                          f -= (optional.get() + 0.3F) * 0.3F;
                       }
  
--                     if (f > 0.0F && this.field_234893_k_.func_230311_a_(this, this.field_77287_j, blockpos, blockstate, f)) {
-+                     if (f > 0.0F && this.field_234893_k_.func_230311_a_(this, this.field_77287_j, blockpos, blockstate, f) && blockpos.func_177956_o() < 256 && blockpos.func_177956_o() >= 0) { // CraftBukkit - don't wrap explosions
+-                     if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockpos, blockstate, f)) {
++                     if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockpos, blockstate, f) && blockpos.getY() < 256 && blockpos.getY() >= 0) { // CraftBukkit - don't wrap explosions
                          set.add(blockpos);
                       }
  
 @@ -176,6 +_,7 @@
-       int j2 = MathHelper.func_76128_c(this.field_77282_d - (double)f2 - 1.0D);
-       int j1 = MathHelper.func_76128_c(this.field_77282_d + (double)f2 + 1.0D);
-       List<Entity> list = this.field_77287_j.func_72839_b(this.field_77283_e, new AxisAlignedBB((double)k1, (double)i2, (double)j2, (double)l1, (double)i1, (double)j1));
-+      net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.field_77287_j, this, list, f2);
-       Vector3d vector3d = new Vector3d(this.field_77284_b, this.field_77285_c, this.field_77282_d);
+       int j2 = MathHelper.floor(this.z - (double)f2 - 1.0D);
+       int j1 = MathHelper.floor(this.z + (double)f2 + 1.0D);
+       List<Entity> list = this.level.getEntities(this.source, new AxisAlignedBB((double)k1, (double)i2, (double)j2, (double)l1, (double)i1, (double)j1));
++      net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.level, this, list, f2);
+       Vector3d vector3d = new Vector3d(this.x, this.y, this.z);
  
        for(int k2 = 0; k2 < list.size(); ++k2) {
 @@ -191,9 +_,17 @@
                    d5 = d5 / d13;
                    d7 = d7 / d13;
                    d9 = d9 / d13;
--                  double d14 = (double)func_222259_a(vector3d, entity);
+-                  double d14 = (double)getSeenPercent(vector3d, entity);
 +                  double d14 = this.getBlockDensityPaper(vector3d, entity); // Paper - Optimize explosions
                    double d10 = (1.0D - d12) * d14;
--                  entity.func_70097_a(this.func_199591_b(), (float)((int)((d10 * d10 + d10) / 2.0D * 7.0D * (double)f2 + 1.0D)));
+-                  entity.hurt(this.getDamageSource(), (float)((int)((d10 * d10 + d10) / 2.0D * 7.0D * (double)f2 + 1.0D)));
 +                  // CraftBukkit start
-+                  CraftEventFactory.entityDamage = field_77283_e;
++                  CraftEventFactory.entityDamage = source;
 +                  entity.forceExplosionKnockback = false;
-+                  boolean wasDamaged = entity.func_70097_a(this.func_199591_b(), (float) ((int) ((d10 * d10 + d10) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                  boolean wasDamaged = entity.hurt(this.getDamageSource(), (float) ((int) ((d10 * d10 + d10) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                  CraftEventFactory.entityDamage = null;
 +                  if (!wasDamaged && !(entity instanceof TNTEntity || entity instanceof FallingBlockEntity) && !entity.forceExplosionKnockback) {
 +                     continue;
@@ -109,19 +109,19 @@
 +                  // CraftBukkit end
                    double d11 = d10;
                    if (entity instanceof LivingEntity) {
-                      d11 = ProtectionEnchantment.func_92092_a((LivingEntity)entity, d10);
+                      d11 = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity)entity, d10);
 @@ -231,17 +_,57 @@
           ObjectArrayList<Pair<ItemStack, BlockPos>> objectarraylist = new ObjectArrayList<>();
-          Collections.shuffle(this.field_77281_g, this.field_77287_j.field_73012_v);
+          Collections.shuffle(this.toBlow, this.level.random);
  
 +         // CraftBukkit start
-+         org.bukkit.World bworld = this.field_77287_j.getWorld();
-+         org.bukkit.entity.Entity explode = (this.field_77283_e == null) ? null : this.field_77283_e.getBukkitEntity();
-+         Location location = new Location(bworld, this.field_77284_b, this.field_77285_c, this.field_77282_d);
++         org.bukkit.World bworld = this.level.getWorld();
++         org.bukkit.entity.Entity explode = (this.source == null) ? null : this.source.getBukkitEntity();
++         Location location = new Location(bworld, this.x, this.y, this.z);
 +         List<org.bukkit.block.Block> blockList = Lists.newArrayList();
-+         for (int i1 = this.field_77281_g.size() - 1; i1 >= 0; --i1) {
-+            BlockPos cpos = this.field_77281_g.get(i1);
-+            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.func_177958_n(), cpos.func_177956_o(), cpos.func_177952_p());
++         for (int i1 = this.toBlow.size() - 1; i1 >= 0; --i1) {
++            BlockPos cpos = this.toBlow.get(i1);
++            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
 +            if (!bblock.getType().isAir()) {
 +               blockList.add(bblock);
 +            }
@@ -130,23 +130,23 @@
 +         List<org.bukkit.block.Block> bukkitBlocks;
 +         float yield;
 +         if (explode != null) {
-+            EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, (this.field_222260_b == Mode.DESTROY) ? (1.0f / this.field_77280_f) : 1.0f);
-+            this.field_77287_j.getCBServer().getPluginManager().callEvent(event);
++            EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, (this.blockInteraction == Mode.DESTROY) ? (1.0f / this.radius) : 1.0f);
++            this.level.getCBServer().getPluginManager().callEvent(event);
 +            cancelled = event.isCancelled();
 +            bukkitBlocks = event.blockList();
 +            yield = event.getYield();
 +         }
 +         else {
-+            BlockExplodeEvent event2 = new BlockExplodeEvent(location.getBlock(), blockList, (this.field_222260_b == Mode.DESTROY) ? (1.0f / this.field_77280_f) : 1.0f);
-+            this.field_77287_j.getCBServer().getPluginManager().callEvent(event2);
++            BlockExplodeEvent event2 = new BlockExplodeEvent(location.getBlock(), blockList, (this.blockInteraction == Mode.DESTROY) ? (1.0f / this.radius) : 1.0f);
++            this.level.getCBServer().getPluginManager().callEvent(event2);
 +            cancelled = event2.isCancelled();
 +            bukkitBlocks = event2.blockList();
 +            yield = event2.getYield();
 +         }
-+         this.field_77281_g.clear();
++         this.toBlow.clear();
 +         for (org.bukkit.block.Block bblock2 : bukkitBlocks) {
 +            BlockPos coords = new BlockPos(bblock2.getX(), bblock2.getY(), bblock2.getZ());
-+            this.field_77281_g.add(coords);
++            this.toBlow.add(coords);
 +         }
 +         if (cancelled) {
 +            this.wasCanceled = true;
@@ -154,42 +154,42 @@
 +         }
 +         // CraftBukkit end
 +
-          for(BlockPos blockpos : this.field_77281_g) {
-             BlockState blockstate = this.field_77287_j.func_180495_p(blockpos);
-             Block block = blockstate.func_177230_c();
--            if (!blockstate.func_196958_f()) {
-+            if (!blockstate.isAir(this.field_77287_j, blockpos)) {
-                BlockPos blockpos1 = blockpos.func_185334_h();
-                this.field_77287_j.func_217381_Z().func_76320_a("explosion_blocks");
--               if (block.func_149659_a(this) && this.field_77287_j instanceof ServerWorld) {
--                  TileEntity tileentity = block.func_235695_q_() ? this.field_77287_j.func_175625_s(blockpos) : null;
-+               if (blockstate.canDropFromExplosion(this.field_77287_j, blockpos, this) && this.field_77287_j instanceof ServerWorld) {
-+                  TileEntity tileentity = blockstate.hasTileEntity() ? this.field_77287_j.func_175625_s(blockpos) : null;
-                   LootContext.Builder lootcontext$builder = (new LootContext.Builder((ServerWorld)this.field_77287_j)).func_216023_a(this.field_77287_j.field_73012_v).func_216015_a(LootParameters.field_237457_g_, Vector3d.func_237489_a_(blockpos)).func_216015_a(LootParameters.field_216289_i, ItemStack.field_190927_a).func_216021_b(LootParameters.field_216288_h, tileentity).func_216021_b(LootParameters.field_216281_a, this.field_77283_e);
--                  if (this.field_222260_b == Explosion.Mode.DESTROY) {
--                     lootcontext$builder.func_216015_a(LootParameters.field_216290_j, this.field_77280_f);
-+                  if (this.field_222260_b == Explosion.Mode.DESTROY || yield < 1.0F) { // CraftBukkit - add yield
-+                     lootcontext$builder.func_216015_a(LootParameters.field_216290_j, 1.0F / yield); // CraftBukkit - add yield
+          for(BlockPos blockpos : this.toBlow) {
+             BlockState blockstate = this.level.getBlockState(blockpos);
+             Block block = blockstate.getBlock();
+-            if (!blockstate.isAir()) {
++            if (!blockstate.isAir(this.level, blockpos)) {
+                BlockPos blockpos1 = blockpos.immutable();
+                this.level.getProfiler().push("explosion_blocks");
+-               if (block.dropFromExplosion(this) && this.level instanceof ServerWorld) {
+-                  TileEntity tileentity = block.isEntityBlock() ? this.level.getBlockEntity(blockpos) : null;
++               if (blockstate.canDropFromExplosion(this.level, blockpos, this) && this.level instanceof ServerWorld) {
++                  TileEntity tileentity = blockstate.hasTileEntity() ? this.level.getBlockEntity(blockpos) : null;
+                   LootContext.Builder lootcontext$builder = (new LootContext.Builder((ServerWorld)this.level)).withRandom(this.level.random).withParameter(LootParameters.ORIGIN, Vector3d.atCenterOf(blockpos)).withParameter(LootParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootParameters.THIS_ENTITY, this.source);
+-                  if (this.blockInteraction == Explosion.Mode.DESTROY) {
+-                     lootcontext$builder.withParameter(LootParameters.EXPLOSION_RADIUS, this.radius);
++                  if (this.blockInteraction == Explosion.Mode.DESTROY || yield < 1.0F) { // CraftBukkit - add yield
++                     lootcontext$builder.withParameter(LootParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
                    }
  
-                   blockstate.func_215693_a(lootcontext$builder).forEach((p_229977_2_) -> {
+                   blockstate.getDrops(lootcontext$builder).forEach((p_229977_2_) -> {
 @@ -249,8 +_,7 @@
                    });
                 }
  
--               this.field_77287_j.func_180501_a(blockpos, Blocks.field_150350_a.func_176223_P(), 3);
--               block.func_180652_a(this.field_77287_j, blockpos, this);
-+               blockstate.onBlockExploded(this.field_77287_j, blockpos, this);
-                this.field_77287_j.func_217381_Z().func_76319_b();
+-               this.level.setBlock(blockpos, Blocks.AIR.defaultBlockState(), 3);
+-               block.wasExploded(this.level, blockpos, this);
++               blockstate.onBlockExploded(this.level, blockpos, this);
+                this.level.getProfiler().pop();
              }
           }
 @@ -263,14 +_,19 @@
-       if (this.field_77286_a) {
-          for(BlockPos blockpos2 : this.field_77281_g) {
-             if (this.field_77290_i.nextInt(3) == 0 && this.field_77287_j.func_180495_p(blockpos2).func_196958_f() && this.field_77287_j.func_180495_p(blockpos2.func_177977_b()).func_200015_d(this.field_77287_j, blockpos2.func_177977_b())) {
+       if (this.fire) {
+          for(BlockPos blockpos2 : this.toBlow) {
+             if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockpos2).isAir() && this.level.getBlockState(blockpos2.below()).isSolidRender(this.level, blockpos2.below())) {
 +               // CraftBukkit start - Ignition by explosion
-+               if (!org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callBlockIgniteEvent(this.field_77287_j, blockpos2.func_177958_n(), blockpos2.func_177956_o(), blockpos2.func_177952_p(), this).isCancelled()) {
-                this.field_77287_j.func_175656_a(blockpos2, AbstractFireBlock.func_235326_a_(this.field_77287_j, blockpos2));
++               if (!org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callBlockIgniteEvent(this.level, blockpos2.getX(), blockpos2.getY(), blockpos2.getZ(), this).isCancelled()) {
+                this.level.setBlockAndUpdate(blockpos2, AbstractFireBlock.getState(this.level, blockpos2));
              }
 +               // CraftBukkit end
 +            }
@@ -198,13 +198,13 @@
  
     }
  
-    private static void func_229976_a_(ObjectArrayList<Pair<ItemStack, BlockPos>> p_229976_0_, ItemStack p_229976_1_, BlockPos p_229976_2_) {
-+      if (p_229976_1_.func_190926_b())  return; // CraftBukkit - SPIGOT-5425
+    private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPos>> p_229976_0_, ItemStack p_229976_1_, BlockPos p_229976_2_) {
++      if (p_229976_1_.isEmpty())  return; // CraftBukkit - SPIGOT-5425
        int i = p_229976_0_.size();
  
        for(int j = 0; j < i; ++j) {
 @@ -324,9 +_,95 @@
-       return this.field_77281_g;
+       return this.toBlow;
     }
  
 +   public Vector3d getPosition() {
@@ -213,7 +213,7 @@
 +
 +   @Nullable
 +   public Entity getExploder() {
-+      return this.field_77283_e;
++      return this.source;
 +   }
 +
     public static enum Mode {
@@ -223,11 +223,11 @@
     }
 +   // Paper start - Optimize explosions
 +   private float getBlockDensityPaper(Vector3d vec3d, Entity entity) {
-+       CacheKey key = new CacheKey(this, entity.func_174813_aQ());
-+       Float blockDensity = this.field_77287_j.explosionDensityCache.get(key);
++       CacheKey key = new CacheKey(this, entity.getBoundingBox());
++       Float blockDensity = this.level.explosionDensityCache.get(key);
 +       if (blockDensity == null) {
-+           blockDensity = func_222259_a(vec3d, entity);
-+           this.field_77287_j.explosionDensityCache.put(key, blockDensity);
++           blockDensity = getSeenPercent(vec3d, entity);
++           this.level.explosionDensityCache.put(key, blockDensity);
 +       }
 +
 +       return blockDensity;
@@ -240,16 +240,16 @@
 +       private final double maxX, maxY, maxZ;
 +
 +       public CacheKey(Explosion explosion, AxisAlignedBB aabb) {
-+           this.world = explosion.field_77287_j;
-+           this.posX = explosion.field_77284_b;
-+           this.posY = explosion.field_77285_c;
-+           this.posZ = explosion.field_77282_d;
-+           this.minX = aabb.field_72340_a;
-+           this.minY = aabb.field_72338_b;
-+           this.minZ = aabb.field_72339_c;
-+           this.maxX = aabb.field_72336_d;
-+           this.maxY = aabb.field_72337_e;
-+           this.maxZ = aabb.field_72334_f;
++           this.world = explosion.level;
++           this.posX = explosion.x;
++           this.posY = explosion.y;
++           this.posZ = explosion.z;
++           this.minX = aabb.minX;
++           this.minY = aabb.minY;
++           this.minZ = aabb.minZ;
++           this.maxX = aabb.maxX;
++           this.maxY = aabb.maxY;
++           this.maxZ = aabb.maxZ;
 +       }
 +
 +       @Override

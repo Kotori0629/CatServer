@@ -14,29 +14,29 @@
                    }
                 }
  
--               SoundType soundtype = blockstate1.func_215695_r();
--               world.func_184133_a(playerentity, blockpos, this.func_219983_a(blockstate1), SoundCategory.BLOCKS, (soundtype.func_185843_a() + 1.0F) / 2.0F, soundtype.func_185847_b() * 0.8F);
-+               SoundType soundtype = blockstate1.getSoundType(world, blockpos, p_195942_1_.func_195999_j());
-+               world.func_184133_a(playerentity, blockpos, this.getPlaceSound(blockstate1, world, blockpos, p_195942_1_.func_195999_j()), SoundCategory.BLOCKS, (soundtype.func_185843_a() + 1.0F) / 2.0F, soundtype.func_185847_b() * 0.8F);
-                if (playerentity == null || !playerentity.field_71075_bZ.field_75098_d) {
-                   itemstack.func_190918_g(1);
+-               SoundType soundtype = blockstate1.getSoundType();
+-               world.playSound(playerentity, blockpos, this.getPlaceSound(blockstate1), SoundCategory.BLOCKS, (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
++               SoundType soundtype = blockstate1.getSoundType(world, blockpos, p_195942_1_.getPlayer());
++               world.playSound(playerentity, blockpos, this.getPlaceSound(blockstate1, world, blockpos, p_195942_1_.getPlayer()), SoundCategory.BLOCKS, (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
+                if (playerentity == null || !playerentity.abilities.instabuild) {
+                   itemstack.shrink(1);
                 }
 @@ -81,10 +_,16 @@
        }
     }
  
 +   @Deprecated //Forge: Use more sensitive version {@link BlockItem#getPlaceSound(BlockState, IBlockReader, BlockPos, Entity) }
-    protected SoundEvent func_219983_a(BlockState p_219983_1_) {
-       return p_219983_1_.func_215695_r().func_185841_e();
+    protected SoundEvent getPlaceSound(BlockState p_219983_1_) {
+       return p_219983_1_.getSoundType().getPlaceSound();
     }
  
 +   //Forge: Sensitive version of BlockItem#getPlaceSound
 +   protected SoundEvent getPlaceSound(BlockState state, World world, BlockPos pos, PlayerEntity entity) {
-+      return state.getSoundType(world, pos, entity).func_185841_e();
++      return state.getSoundType(world, pos, entity).getPlaceSound();
 +   }
 +
     @Nullable
-    public BlockItemUseContext func_219984_b(BlockItemUseContext p_219984_1_) {
+    public BlockItemUseContext updatePlacementContext(BlockItemUseContext p_219984_1_) {
        return p_219984_1_;
 @@ -123,6 +_,22 @@
        return blockstate;
@@ -45,62 +45,62 @@
 +   public static BlockState getBlockState(BlockState iblockdata, CompoundNBT nbttagcompound1) {
 +      BlockState iblockdata1 = iblockdata;
 +      // CraftBukkit end
-+      StateContainer<Block, BlockState> statecontainer = iblockdata.func_177230_c().func_176194_O();
++      StateContainer<Block, BlockState> statecontainer = iblockdata.getBlock().getStateDefinition();
 +
-+      for (String s : nbttagcompound1.func_150296_c()) {
-+         Property<?> property = statecontainer.func_185920_a(s);
++      for (String s : nbttagcompound1.getAllKeys()) {
++         Property<?> property = statecontainer.getProperty(s);
 +         if (property != null) {
-+            String s1 = nbttagcompound1.func_74781_a(s).func_150285_a_();
-+            iblockdata1 = func_219988_a(iblockdata1, property, s1);
++            String s1 = nbttagcompound1.get(s).getAsString();
++            iblockdata1 = updateState(iblockdata1, property, s1);
 +         }
 +      }
 +
 +      return iblockdata1;
 +   }
 +
-    private static <T extends Comparable<T>> BlockState func_219988_a(BlockState p_219988_0_, Property<T> p_219988_1_, String p_219988_2_) {
-       return p_219988_1_.func_185929_b(p_219988_2_).map((p_219986_2_) -> {
-          return p_219988_0_.func_206870_a(p_219988_1_, p_219986_2_);
+    private static <T extends Comparable<T>> BlockState updateState(BlockState p_219988_0_, Property<T> p_219988_1_, String p_219988_2_) {
+       return p_219988_1_.getValue(p_219988_2_).map((p_219986_2_) -> {
+          return p_219988_0_.setValue(p_219988_1_, p_219986_2_);
 @@ -132,7 +_,13 @@
-    protected boolean func_195944_a(BlockItemUseContext p_195944_1_, BlockState p_195944_2_) {
-       PlayerEntity playerentity = p_195944_1_.func_195999_j();
-       ISelectionContext iselectioncontext = playerentity == null ? ISelectionContext.func_216377_a() : ISelectionContext.func_216374_a(playerentity);
--      return (!this.func_219987_d() || p_195944_2_.func_196955_c(p_195944_1_.func_195991_k(), p_195944_1_.func_195995_a())) && p_195944_1_.func_195991_k().func_226663_a_(p_195944_2_, p_195944_1_.func_195995_a(), iselectioncontext);
+    protected boolean canPlace(BlockItemUseContext p_195944_1_, BlockState p_195944_2_) {
+       PlayerEntity playerentity = p_195944_1_.getPlayer();
+       ISelectionContext iselectioncontext = playerentity == null ? ISelectionContext.empty() : ISelectionContext.of(playerentity);
+-      return (!this.mustSurvive() || p_195944_2_.canSurvive(p_195944_1_.getLevel(), p_195944_1_.getClickedPos())) && p_195944_1_.getLevel().isUnobstructed(p_195944_2_, p_195944_1_.getClickedPos(), iselectioncontext);
 +      // CraftBukkit start - store default return
-+      boolean defaultReturn = (!this.func_219987_d() || p_195944_2_.func_196955_c(p_195944_1_.func_195991_k(), p_195944_1_.func_195995_a())) && p_195944_1_.func_195991_k().func_226663_a_(p_195944_2_, p_195944_1_.func_195995_a(), iselectioncontext);
-+      org.bukkit.entity.Player player = (p_195944_1_.func_195999_j() instanceof ServerPlayerEntity) ? (org.bukkit.entity.Player) p_195944_1_.func_195999_j().getBukkitEntity() : null;
-+      BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(p_195944_1_.func_195991_k(), p_195944_1_.func_195995_a()), player, CraftBlockData.fromData(p_195944_2_), defaultReturn);
-+      p_195944_1_.func_195991_k().getCBServer().getPluginManager().callEvent(event);
++      boolean defaultReturn = (!this.mustSurvive() || p_195944_2_.canSurvive(p_195944_1_.getLevel(), p_195944_1_.getClickedPos())) && p_195944_1_.getLevel().isUnobstructed(p_195944_2_, p_195944_1_.getClickedPos(), iselectioncontext);
++      org.bukkit.entity.Player player = (p_195944_1_.getPlayer() instanceof ServerPlayerEntity) ? (org.bukkit.entity.Player) p_195944_1_.getPlayer().getBukkitEntity() : null;
++      BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(p_195944_1_.getLevel(), p_195944_1_.getClickedPos()), player, CraftBlockData.fromData(p_195944_2_), defaultReturn);
++      p_195944_1_.getLevel().getCBServer().getPluginManager().callEvent(event);
 +      return event.isBuildable();
 +      // CraftBukkit end
     }
  
-    protected boolean func_219987_d() {
+    protected boolean mustSurvive() {
 @@ -152,7 +_,7 @@
           if (compoundnbt != null) {
-             TileEntity tileentity = p_179224_0_.func_175625_s(p_179224_2_);
+             TileEntity tileentity = p_179224_0_.getBlockEntity(p_179224_2_);
              if (tileentity != null) {
--               if (!p_179224_0_.field_72995_K && tileentity.func_183000_F() && (p_179224_1_ == null || !p_179224_1_.func_195070_dx())) {
-+               if (!p_179224_0_.field_72995_K && tileentity.func_183000_F() && (p_179224_1_ == null || !(p_179224_1_.func_195070_dx() || (p_179224_1_.field_71075_bZ.field_75098_d && p_179224_1_.getBukkitEntity().hasPermission("minecraft.nbt.place"))))) { // Spigot - add permission
+-               if (!p_179224_0_.isClientSide && tileentity.onlyOpCanSetNbt() && (p_179224_1_ == null || !p_179224_1_.canUseGameMasterBlocks())) {
++               if (!p_179224_0_.isClientSide && tileentity.onlyOpCanSetNbt() && (p_179224_1_ == null || !(p_179224_1_.canUseGameMasterBlocks() || (p_179224_1_.abilities.instabuild && p_179224_1_.getBukkitEntity().hasPermission("minecraft.nbt.place"))))) { // Spigot - add permission
                    return false;
                 }
  
 @@ -192,10 +_,18 @@
     }
  
-    public Block func_179223_d() {
+    public Block getBlock() {
 +      return this.getBlockRaw() == null ? null : this.getBlockRaw().delegate.get();
 +   }
 +
 +   private Block getBlockRaw() {
-       return this.field_150939_a;
+       return this.block;
     }
  
-    public void func_195946_a(Map<Block, Item> p_195946_1_, Item p_195946_2_) {
-       p_195946_1_.put(this.func_179223_d(), p_195946_2_);
+    public void registerBlocks(Map<Block, Item> p_195946_1_, Item p_195946_2_) {
+       p_195946_1_.put(this.getBlock(), p_195946_2_);
 +   }
 +
 +   public void removeFromBlockToItemMap(Map<Block, Item> blockToItemMap, Item itemIn) {
-+      blockToItemMap.remove(this.func_179223_d());
++      blockToItemMap.remove(this.getBlock());
     }
  }

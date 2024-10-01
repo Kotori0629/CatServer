@@ -8,15 +8,15 @@
 +                     p_onTermination_1_.printStackTrace();
 +                     catserver.server.utils.WorkerExceptionLogger.addException(p_onTermination_1_);
 +                     // CatServer end
-                      Util.field_195650_a.warn("{} died", this.getName(), p_onTermination_1_);
+                      Util.LOGGER.warn("{} died", this.getName(), p_onTermination_1_);
                    } else {
-                      Util.field_195650_a.debug("{} shutdown", (Object)this.getName());
+                      Util.LOGGER.debug("{} shutdown", (Object)this.getName());
 @@ -200,7 +_,7 @@
        try {
-          type = DataFixesManager.func_210901_a().getSchema(DataFixUtils.makeKey(SharedConstants.func_215069_a().getWorldVersion())).getChoiceType(p_240990_0_, p_240990_1_);
+          type = DataFixesManager.getDataFixer().getSchema(DataFixUtils.makeKey(SharedConstants.getCurrentVersion().getWorldVersion())).getChoiceType(p_240990_0_, p_240990_1_);
        } catch (IllegalArgumentException illegalargumentexception) {
--         field_195650_a.error("No data fixer registered for {}", (Object)p_240990_1_);
-+         field_195650_a.debug("No data fixer registered for {}", (Object)p_240990_1_);
-          if (SharedConstants.field_206244_b) {
+-         LOGGER.error("No data fixer registered for {}", (Object)p_240990_1_);
++         LOGGER.debug("No data fixer registered for {}", (Object)p_240990_1_);
+          if (SharedConstants.IS_RUNNING_IN_IDE) {
              throw illegalargumentexception;
           }

@@ -8,10 +8,10 @@
 +import org.bukkit.craftbukkit.v1_16_R3.boss.CraftKeyedBossbar;
  
  public class CustomServerBossInfo extends ServerBossInfo {
-    private final ResourceLocation field_201373_h;
-    private final Set<UUID> field_201374_i = Sets.newHashSet();
-    private int field_201375_j;
-    private int field_201376_k = 100;
+    private final ResourceLocation id;
+    private final Set<UUID> players = Sets.newHashSet();
+    private int value;
+    private int max = 100;
 +
 +   // CraftBukkit start
 +   private KeyedBossBar bossBar;

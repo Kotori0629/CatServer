@@ -7,13 +7,13 @@
 +import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
  
  public class VexEntity extends MonsterEntity {
-    protected static final DataParameter<Byte> field_190664_a = EntityDataManager.func_187226_a(VexEntity.class, DataSerializers.field_187191_a);
+    protected static final DataParameter<Byte> DATA_FLAGS_ID = EntityDataManager.defineId(VexEntity.class, DataSerializers.BYTE);
 @@ -246,7 +_,7 @@
        }
  
-       public void func_75249_e() {
--         VexEntity.this.func_70624_b(VexEntity.this.field_190665_b.func_70638_az());
-+         VexEntity.this.setGoalTarget(VexEntity.this.field_190665_b.func_70638_az(), TargetReason.OWNER_ATTACKED_TARGET, true); // CraftBukkit
-          super.func_75249_e();
+       public void start() {
+-         VexEntity.this.setTarget(VexEntity.this.owner.getTarget());
++         VexEntity.this.setGoalTarget(VexEntity.this.owner.getTarget(), TargetReason.OWNER_ATTACKED_TARGET, true); // CraftBukkit
+          super.start();
        }
     }

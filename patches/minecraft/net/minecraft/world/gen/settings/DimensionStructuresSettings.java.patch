@@ -3,9 +3,9 @@
 @@ -26,7 +_,7 @@
  
     public DimensionStructuresSettings(Optional<StructureSpreadSettings> p_i231912_1_, Map<Structure<?>, StructureSeparationSettings> p_i231912_2_) {
-       this.field_236194_e_ = p_i231912_1_.orElse((StructureSpreadSettings)null);
--      this.field_236193_d_ = p_i231912_2_;
-+      this.field_236193_d_ = Maps.newHashMap(p_i231912_2_); // Spigot;
+       this.stronghold = p_i231912_1_.orElse((StructureSpreadSettings)null);
+-      this.structureConfig = p_i231912_2_;
++      this.structureConfig = Maps.newHashMap(p_i231912_2_); // Spigot;
     }
  
     public DimensionStructuresSettings(boolean p_i231913_1_) {

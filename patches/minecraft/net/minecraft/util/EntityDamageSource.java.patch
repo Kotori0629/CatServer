@@ -2,12 +2,12 @@
 +++ b/net/minecraft/util/EntityDamageSource.java
 @@ -51,4 +_,10 @@
     public String toString() {
-       return "EntityDamageSource (" + this.field_76386_o + ")";
+       return "EntityDamageSource (" + this.entity + ")";
     }
 +
 +   // CraftBukkit start
 +   public Entity getProximateDamageSource() {
-+      return super.func_76346_g();
++      return super.getEntity();
 +   }
 +   // CraftBukkit end
  }

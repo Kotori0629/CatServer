@@ -4,8 +4,8 @@
  import net.minecraft.network.play.IServerPlayNetHandler;
  
  public class CResourcePackStatusPacket implements IPacket<IServerPlayNetHandler> {
--   private CResourcePackStatusPacket.Action field_179719_b;
-+   public CResourcePackStatusPacket.Action field_179719_b;
+-   private CResourcePackStatusPacket.Action action;
++   public CResourcePackStatusPacket.Action action;
  
     public CResourcePackStatusPacket() {
     }

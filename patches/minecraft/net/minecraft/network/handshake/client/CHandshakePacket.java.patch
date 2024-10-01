@@ -20,13 +20,13 @@
 +import org.spigotmc.SpigotConfig;
  
  public class CHandshakePacket implements IPacket<IHandshakeNetHandler> {
-    private int field_149600_a;
--   private String field_149598_b;
--   private int field_149599_c;
-+   public String field_149598_b;
+    private int protocolVersion;
+-   private String hostName;
+-   private int port;
++   public String hostName;
 +   public String original_ip;
-+   public int field_149599_c;
-    private ProtocolType field_149597_d;
++   public int port;
+    private ProtocolType intention;
 +   private String fmlVersion = net.minecraftforge.fml.network.FMLNetworkConstants.NETVERSION;
 +
 +   private static final String EXTRA_DATA = "extraData";
@@ -36,15 +36,15 @@
     }
 @@ -28,14 +_,29 @@
  
-    public void func_148837_a(PacketBuffer p_148837_1_) throws IOException {
-       this.field_149600_a = p_148837_1_.func_150792_a();
--      this.field_149598_b = p_148837_1_.func_150789_c(255);
-+      this.field_149598_b = p_148837_1_.func_150789_c(Short.MAX_VALUE);
-       this.field_149599_c = p_148837_1_.readUnsignedShort();
-       this.field_149597_d = ProtocolType.func_150760_a(p_148837_1_.func_150792_a());
-+      this.fmlVersion = net.minecraftforge.fml.network.NetworkHooks.getFMLVersion(this.field_149598_b);
+    public void read(PacketBuffer p_148837_1_) throws IOException {
+       this.protocolVersion = p_148837_1_.readVarInt();
+-      this.hostName = p_148837_1_.readUtf(255);
++      this.hostName = p_148837_1_.readUtf(Short.MAX_VALUE);
+       this.port = p_148837_1_.readUnsignedShort();
+       this.intention = ProtocolType.getById(p_148837_1_.readVarInt());
++      this.fmlVersion = net.minecraftforge.fml.network.NetworkHooks.getFMLVersion(this.hostName);
 +      if (SpigotConfig.bungee && !Objects.equals(this.fmlVersion, FMLNetworkConstants.NETVERSION)) {
-+         String[] split = this.field_149598_b.split("\0");
++         String[] split = this.hostName.split("\0");
 +         if (split.length == 4) {
 +            Property[] properties = GSON.fromJson(split[3], Property[].class);
 +            for (Property property : properties) {
@@ -55,21 +55,21 @@
 +            }
 +         }
 +      }
-+      this.original_ip = this.field_149598_b;
-+      this.field_149598_b = this.field_149598_b.split("\0")[0];
++      this.original_ip = this.hostName;
++      this.hostName = this.hostName.split("\0")[0];
     }
  
-    public void func_148840_b(PacketBuffer p_148840_1_) throws IOException {
-       p_148840_1_.func_150787_b(this.field_149600_a);
--      p_148840_1_.func_180714_a(this.field_149598_b);
-+      p_148840_1_.func_180714_a(this.field_149598_b + "\0"+net.minecraftforge.fml.network.FMLNetworkConstants.NETVERSION+"\0");
-       p_148840_1_.writeShort(this.field_149599_c);
-       p_148840_1_.func_150787_b(this.field_149597_d.func_150759_c());
+    public void write(PacketBuffer p_148840_1_) throws IOException {
+       p_148840_1_.writeVarInt(this.protocolVersion);
+-      p_148840_1_.writeUtf(this.hostName);
++      p_148840_1_.writeUtf(this.hostName + "\0"+net.minecraftforge.fml.network.FMLNetworkConstants.NETVERSION+"\0");
+       p_148840_1_.writeShort(this.port);
+       p_148840_1_.writeVarInt(this.intention.getId());
     }
 @@ -50,5 +_,9 @@
  
-    public int func_149595_d() {
-       return this.field_149600_a;
+    public int getProtocolVersion() {
+       return this.protocolVersion;
 +   }
 +
 +   public String getFMLVersion() {

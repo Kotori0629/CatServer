@@ -7,13 +7,13 @@
 +import org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory;
  
  public class EvokerFangsEntity extends Entity {
-    private int field_190553_a;
+    private int warmupDelayTicks;
 @@ -92,7 +_,9 @@
-       } else if (--this.field_190553_a < 0) {
-          if (this.field_190553_a == -8) {
-             for(LivingEntity livingentity : this.field_70170_p.func_217357_a(LivingEntity.class, this.func_174813_aQ().func_72314_b(0.2D, 0.0D, 0.2D))) {
+       } else if (--this.warmupDelayTicks < 0) {
+          if (this.warmupDelayTicks == -8) {
+             for(LivingEntity livingentity : this.level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.2D, 0.0D, 0.2D))) {
 +               CraftEventFactory.entityDamage = this; // CraftBukkit
-                this.func_190551_c(livingentity);
+                this.dealDamageTo(livingentity);
 +               CraftEventFactory.entityDamage = null; // CraftBukkit
              }
           }

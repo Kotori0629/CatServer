@@ -17,25 +17,25 @@
 +import org.bukkit.event.block.BlockCookEvent;
  
  public class CampfireTileEntity extends TileEntity implements IClearable, ITickableTileEntity {
-    private final NonNullList<ItemStack> field_213987_a = NonNullList.func_191197_a(4, ItemStack.field_190927_a);
--   private final int[] field_213988_b = new int[4];
--   private final int[] field_213989_c = new int[4];
-+   public final int[] field_213988_b = new int[4];
-+   public final int[] field_213989_c = new int[4];
+    private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
+-   private final int[] cookingProgress = new int[4];
+-   private final int[] cookingTime = new int[4];
++   public final int[] cookingProgress = new int[4];
++   public final int[] cookingTime = new int[4];
  
     public CampfireTileEntity() {
-       super(TileEntityType.field_222488_F);
+       super(TileEntityType.CAMPFIRE);
 @@ -64,7 +_,23 @@
-                   return p_213979_1_.func_77572_b(iinventory);
+                   return p_213979_1_.assemble(iinventory);
                 }).orElse(itemstack);
-                BlockPos blockpos = this.func_174877_v();
--               InventoryHelper.func_180173_a(this.field_145850_b, (double)blockpos.func_177958_n(), (double)blockpos.func_177956_o(), (double)blockpos.func_177952_p(), itemstack1);
+                BlockPos blockpos = this.getBlockPos();
+-               InventoryHelper.dropItemStack(this.level, (double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ(), itemstack1);
 +
 +               // CraftBukkit start - fire BlockCookEvent
 +               CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
 +               org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
-+               BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.field_145850_b, this.field_174879_c), source, result);
-+               this.field_145850_b.getCBServer().getPluginManager().callEvent(blockCookEvent);
++               BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.level, this.worldPosition), source, result);
++               this.level.getCBServer().getPluginManager().callEvent(blockCookEvent);
 +               if (blockCookEvent.isCancelled()) {
 +                  return;
 +               }
@@ -43,10 +43,10 @@
 +               itemstack1 = CraftItemStack.asNMSCopy(result);
 +               // CraftBukkit end
 +               // Paper start
-+               ItemEntity droppedItem = new ItemEntity(this.field_145850_b, blockpos.func_177958_n() + 0.5D, blockpos.func_177956_o() + 0.5D, blockpos.func_177952_p() + 0.5D, itemstack1.func_77979_a(this.field_145850_b.field_73012_v.nextInt(21) + 10));
-+               droppedItem.func_213293_j(this.field_145850_b.field_73012_v.nextGaussian() * 0.05D, this.field_145850_b.field_73012_v.nextGaussian() * 0.05D + 0.2D, this.field_145850_b.field_73012_v.nextGaussian() * 0.05D);
-+               this.field_145850_b.func_217376_c(droppedItem);
++               ItemEntity droppedItem = new ItemEntity(this.level, blockpos.getX() + 0.5D, blockpos.getY() + 0.5D, blockpos.getZ() + 0.5D, itemstack1.split(this.level.random.nextInt(21) + 10));
++               droppedItem.setDeltaMovement(this.level.random.nextGaussian() * 0.05D, this.level.random.nextGaussian() * 0.05D + 0.2D, this.level.random.nextGaussian() * 0.05D);
++               this.level.addFreshEntity(droppedItem);
 +               // Paper end
-                this.field_213987_a.set(i, ItemStack.field_190927_a);
-                this.func_213981_s();
+                this.items.set(i, ItemStack.EMPTY);
+                this.markUpdated();
              }

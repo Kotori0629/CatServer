@@ -8,14 +8,14 @@
 +import org.bukkit.event.hanging.HangingPlaceEvent;
  
  public class HangingEntityItem extends Item {
-    private final EntityType<? extends HangingEntity> field_220001_a;
+    private final EntityType<? extends HangingEntity> type;
 @@ -47,6 +_,16 @@
  
-          if (hangingentity.func_70518_d()) {
-             if (!world.field_72995_K) {
+          if (hangingentity.survives()) {
+             if (!world.isClientSide) {
 +               // CraftBukkit start - fire HangingPlaceEvent
-+               Player  who = (p_195939_1_.func_195999_j() == null) ? null : (Player) p_195939_1_.func_195999_j().getBukkitEntity();
-+               org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockpos.func_177958_n(), blockpos.func_177956_o(), blockpos.func_177952_p());
++               Player  who = (p_195939_1_.getPlayer() == null) ? null : (Player) p_195939_1_.getPlayer().getBukkitEntity();
++               org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockpos.getX(), blockpos.getY(), blockpos.getZ());
 +               org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.v1_16_R3.block.CraftBlock.notchToBlockFace(direction);
 +               HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) ((HangingEntity) hangingentity).getBukkitEntity(), who, blockClicked, blockFace);
 +               world.getCBServer().getPluginManager().callEvent(event);
@@ -23,6 +23,6 @@
 +                  return ActionResultType.FAIL;
 +               }
 +               // CraftBukkit end
-                hangingentity.func_184523_o();
-                world.func_217376_c(hangingentity);
+                hangingentity.playPlacementSound();
+                world.addFreshEntity(hangingentity);
              }

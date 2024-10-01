@@ -7,26 +7,26 @@
 -import net.minecraft.world.GameRules;
  
  public class BreakDoorGoal extends InteractDoorGoal {
-    private final Predicate<Difficulty> field_220699_g;
+    private final Predicate<Difficulty> validDifficulties;
 @@ -29,7 +_,7 @@
-    public boolean func_75250_a() {
-       if (!super.func_75250_a()) {
+    public boolean canUse() {
+       if (!super.canUse()) {
           return false;
--      } else if (!this.field_75356_a.field_70170_p.func_82736_K().func_223586_b(GameRules.field_223599_b)) {
-+      } else if (!net.minecraftforge.common.ForgeHooks.canEntityDestroy(this.field_75356_a.field_70170_p, this.field_179507_b, this.field_75356_a)) {
+-      } else if (!this.mob.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
++      } else if (!net.minecraftforge.common.ForgeHooks.canEntityDestroy(this.mob.level, this.doorPos, this.mob)) {
           return false;
        } else {
-          return this.func_220696_a(this.field_75356_a.field_70170_p.func_175659_aa()) && !this.func_195922_f();
+          return this.isValidDifficulty(this.mob.level.getDifficulty()) && !this.isOpen();
 @@ -67,6 +_,12 @@
        }
  
-       if (this.field_75359_i == this.func_220697_f() && this.func_220696_a(this.field_75356_a.field_70170_p.func_175659_aa())) {
+       if (this.breakTime == this.getDoorBreakTime() && this.isValidDifficulty(this.mob.level.getDifficulty())) {
 +         // CraftBukkit start
-+         if (org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callEntityBreakDoorEvent(this.field_75356_a, this.field_179507_b).isCancelled()) {
-+            this.func_75249_e();
++         if (org.bukkit.craftbukkit.v1_16_R3.event.CraftEventFactory.callEntityBreakDoorEvent(this.mob, this.doorPos).isCancelled()) {
++            this.start();
 +            return;
 +         }
 +         // CraftBukkit end
-          this.field_75356_a.field_70170_p.func_217377_a(this.field_179507_b, false);
-          this.field_75356_a.field_70170_p.func_217379_c(1021, this.field_179507_b, 0);
-          this.field_75356_a.field_70170_p.func_217379_c(2001, this.field_179507_b, Block.func_196246_j(this.field_75356_a.field_70170_p.func_180495_p(this.field_179507_b)));
+          this.mob.level.removeBlock(this.doorPos, false);
+          this.mob.level.levelEvent(1021, this.doorPos, 0);
+          this.mob.level.levelEvent(2001, this.doorPos, Block.getId(this.mob.level.getBlockState(this.doorPos)));

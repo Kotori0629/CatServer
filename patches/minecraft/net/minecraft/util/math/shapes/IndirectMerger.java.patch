@@ -4,10 +4,10 @@
  import it.unimi.dsi.fastutil.ints.IntArrayList;
  
  public final class IndirectMerger implements IDoubleListMerger {
--   private final DoubleArrayList field_197856_a;
-+   private final DoubleList field_197856_a; // Paper - Optimize Voxel Shape Merging
-    private final IntArrayList field_197857_b;
-    private final IntArrayList field_197858_c;
+-   private final DoubleArrayList result;
++   private final DoubleList result; // Paper - Optimize Voxel Shape Merging
+    private final IntArrayList firstIndices;
+    private final IntArrayList secondIndices;
  
 +   // Paper start - Optimize Voxel Shape Merging
 +   private static final IntArrayList INFINITE_B_1 = new IntArrayList(new int[]{1, 1});
@@ -28,17 +28,17 @@
 +      double tail = p_i47685_1_.getDouble(size - 1);
 +      double head = p_i47685_1_.getDouble(0);
 +      if (head == Double.NEGATIVE_INFINITY && tail == Double.POSITIVE_INFINITY && !p_i47685_3_ && !p_i47685_4_ && (size == 2 || size == 4)) {
-+          this.field_197856_a = p_i47685_2_;
++          this.result = p_i47685_2_;
 +          if (size == 2) {
-+              this.field_197857_b = INFINITE_B_0;
++              this.firstIndices = INFINITE_B_0;
 +          } else {
-+              this.field_197857_b = INFINITE_B_1;
++              this.firstIndices = INFINITE_B_1;
 +          }
-+          this.field_197858_c = INFINITE_C;
++          this.secondIndices = INFINITE_C;
 +          return;
 +      }
 +      // Paper end
 +
-       this.field_197856_a = new DoubleArrayList(i1);
-       this.field_197857_b = new IntArrayList(i1);
-       this.field_197858_c = new IntArrayList(i1);
+       this.result = new DoubleArrayList(i1);
+       this.firstIndices = new IntArrayList(i1);
+       this.secondIndices = new IntArrayList(i1);

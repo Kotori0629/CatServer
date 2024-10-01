@@ -11,7 +11,7 @@
 @@ -36,19 +_,45 @@
     }
  
-    private static GameProfile func_152648_b(JsonObject p_152648_0_) {
+    private static GameProfile createGameProfile(JsonObject p_152648_0_) {
 -      if (p_152648_0_.has("uuid") && p_152648_0_.has("name")) {
 +      // Spigot start
 +      // this whole method has to be reworked to account for the fact Bukkit only accepts UUID bans and gives no way for usernames to be stored!
@@ -43,13 +43,13 @@
 +
 +   // CraftBukkit start
 +   public Date getCreated() {
-+      return this.field_73694_d;
++      return this.created;
 +   }
 +
 +   private static <T> T checkExpiry(final T object, final JsonObject jsonobject) {
 +      Date expires = null;
 +      try {
-+         expires = (jsonobject.has("expires") ? BanEntry.field_73698_a.parse(jsonobject.get("expires").getAsString()) : null);
++         expires = (jsonobject.has("expires") ? BanEntry.DATE_FORMAT.parse(jsonobject.get("expires").getAsString()) : null);
 +      } catch (ParseException ex) {
 +      }
 +      if (expires == null || expires.after(new Date())) {

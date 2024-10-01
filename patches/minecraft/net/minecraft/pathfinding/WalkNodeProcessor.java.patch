@@ -3,41 +3,41 @@
 @@ -386,6 +_,9 @@
     }
  
-    private PathNodeType func_237230_a_(MobEntity p_237230_1_, int p_237230_2_, int p_237230_3_, int p_237230_4_) {
-+      if (!this.field_176169_a.isPosLoaded(new BlockPos(p_237230_2_, p_237230_3_, p_237230_4_))) {
+    private PathNodeType getCachedBlockType(MobEntity p_237230_1_, int p_237230_2_, int p_237230_3_, int p_237230_4_) {
++      if (!this.level.isPosLoaded(new BlockPos(p_237230_2_, p_237230_3_, p_237230_4_))) {
 +         return PathNodeType.BLOCKED;
 +      }
-       return this.field_237226_k_.computeIfAbsent(BlockPos.func_218276_a(p_237230_2_, p_237230_3_, p_237230_4_), (p_237229_5_) -> {
-          return this.func_186319_a(this.field_176169_a, p_237230_2_, p_237230_3_, p_237230_4_, p_237230_1_, this.field_176168_c, this.field_176165_d, this.field_176166_e, this.func_186324_d(), this.func_186323_c());
+       return this.pathTypesByPosCache.computeIfAbsent(BlockPos.asLong(p_237230_2_, p_237230_3_, p_237230_4_), (p_237229_5_) -> {
+          return this.getBlockPathType(this.level, p_237230_2_, p_237230_3_, p_237230_4_, p_237230_1_, this.entityWidth, this.entityHeight, this.entityDepth, this.canOpenDoors(), this.canPassDoors());
        });
 @@ -437,6 +_,11 @@
              for(int j1 = -1; j1 <= 1; ++j1) {
                 if (l != 0 || j1 != 0) {
-                   p_237232_1_.func_181079_c(i + l, j + i1, k + j1);
+                   p_237232_1_.set(i + l, j + i1, k + j1);
 +                  // Paper start - Do not load chunks for Pathfinding
 +                  if (!p_237232_0_.isPosLoaded(p_237232_1_)) {
 +                     return PathNodeType.BLOCKED;
 +                  }
 +                  // Paper end
-                   BlockState blockstate = p_237232_0_.func_180495_p(p_237232_1_);
-                   if (blockstate.func_203425_a(Blocks.field_150434_aF)) {
+                   BlockState blockstate = p_237232_0_.getBlockState(p_237232_1_);
+                   if (blockstate.is(Blocks.CACTUS)) {
                       return PathNodeType.DANGER_CACTUS;
 @@ -462,10 +_,17 @@
     }
  
-    protected static PathNodeType func_237238_b_(IBlockReader p_237238_0_, BlockPos p_237238_1_) {
+    protected static PathNodeType getBlockPathTypeRaw(IBlockReader p_237238_0_, BlockPos p_237238_1_) {
 +      // Paper start - Do not load chunks for Pathfinding
 +      if (!p_237238_0_.isPosLoaded(p_237238_1_)) {
 +         return PathNodeType.BLOCKED;
 +      }
 +      // Paper end
-       BlockState blockstate = p_237238_0_.func_180495_p(p_237238_1_);
+       BlockState blockstate = p_237238_0_.getBlockState(p_237238_1_);
 +      PathNodeType type = blockstate.getAiPathNodeType(p_237238_0_, p_237238_1_);
 +      if (type != null) return type;
-       Block block = blockstate.func_177230_c();
-       Material material = blockstate.func_185904_a();
--      if (blockstate.func_196958_f()) {
+       Block block = blockstate.getBlock();
+       Material material = blockstate.getMaterial();
+-      if (blockstate.isAir()) {
 +      if (blockstate.isAir(p_237238_0_, p_237238_1_)) {
           return PathNodeType.OPEN;
-       } else if (!blockstate.func_235714_a_(BlockTags.field_212185_E) && !blockstate.func_203425_a(Blocks.field_196651_dG)) {
-          if (blockstate.func_203425_a(Blocks.field_150434_aF)) {
+       } else if (!blockstate.is(BlockTags.TRAPDOORS) && !blockstate.is(Blocks.LILY_PAD)) {
+          if (blockstate.is(Blocks.CACTUS)) {

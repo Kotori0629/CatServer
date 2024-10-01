@@ -25,28 +25,28 @@
 +import org.bukkit.potion.PotionEffect;
  
  public class BeaconTileEntity extends TileEntity implements INamedContainerProvider, ITickableTileEntity {
-    public static final Effect[][] field_146009_a = new Effect[][]{{Effects.field_76424_c, Effects.field_76422_e}, {Effects.field_76429_m, Effects.field_76430_j}, {Effects.field_76420_g}, {Effects.field_76428_l}};
-    private static final Set<Effect> field_184280_f = Arrays.stream(field_146009_a).flatMap(Arrays::stream).collect(Collectors.toSet());
-    private List<BeaconTileEntity.BeamSegment> field_174909_f = Lists.newArrayList();
-    private List<BeaconTileEntity.BeamSegment> field_213934_g = Lists.newArrayList();
--   private int field_146012_l;
-+   public int field_146012_l; // private->public CraftBukkit
-    private int field_213935_i = -1;
+    public static final Effect[][] BEACON_EFFECTS = new Effect[][]{{Effects.MOVEMENT_SPEED, Effects.DIG_SPEED}, {Effects.DAMAGE_RESISTANCE, Effects.JUMP}, {Effects.DAMAGE_BOOST}, {Effects.REGENERATION}};
+    private static final Set<Effect> VALID_EFFECTS = Arrays.stream(BEACON_EFFECTS).flatMap(Arrays::stream).collect(Collectors.toSet());
+    private List<BeaconTileEntity.BeamSegment> beamSections = Lists.newArrayList();
+    private List<BeaconTileEntity.BeamSegment> checkingBeamSections = Lists.newArrayList();
+-   private int levels;
++   public int levels; // private->public CraftBukkit
+    private int lastCheckY = -1;
     @Nullable
--   private Effect field_146013_m;
+-   private Effect primaryPower;
 -   @Nullable
--   private Effect field_146010_n;
+-   private Effect secondaryPower;
 -   @Nullable
--   private ITextComponent field_146008_p;
--   private LockCode field_213936_m = LockCode.field_180162_a;
-+   public Effect field_146013_m; // private->public CraftBukkit
+-   private ITextComponent name;
+-   private LockCode lockKey = LockCode.NO_LOCK;
++   public Effect primaryPower; // private->public CraftBukkit
 +   @Nullable
-+   public Effect field_146010_n; // private->public CraftBukkit
++   public Effect secondaryPower; // private->public CraftBukkit
 +   @Nullable
-+   public ITextComponent field_146008_p; // private->public CraftBukkit
-+   public LockCode field_213936_m = LockCode.field_180162_a; // private->public CraftBukkit
-    private final IIntArray field_213937_n = new IIntArray() {
-       public int func_221476_a(int p_221476_1_) {
++   public ITextComponent name; // private->public CraftBukkit
++   public LockCode lockKey = LockCode.NO_LOCK; // private->public CraftBukkit
+    private final IIntArray dataAccess = new IIntArray() {
+       public int get(int p_221476_1_) {
           switch(p_221476_1_) {
 @@ -89,6 +_,16 @@
        }
@@ -54,51 +54,51 @@
  
 +   // CraftBukkit start - add fields and methods
 +   public PotionEffect getPrimaryEffect() {
-+      return (this.field_146013_m != null) ? CraftPotionUtil.toBukkit(new EffectInstance(this.field_146013_m, getLevelCB(), getAmplification(), true, true)) : null;
++      return (this.primaryPower != null) ? CraftPotionUtil.toBukkit(new EffectInstance(this.primaryPower, getLevelCB(), getAmplification(), true, true)) : null;
 +   }
 +
 +   public PotionEffect getSecondaryEffect() {
-+      return (hasSecondaryEffect()) ? CraftPotionUtil.toBukkit(new EffectInstance(this.field_146010_n, getLevelCB(), getAmplification(), true, true)) : null;
++      return (hasSecondaryEffect()) ? CraftPotionUtil.toBukkit(new EffectInstance(this.secondaryPower, getLevelCB(), getAmplification(), true, true)) : null;
 +   }
 +   // CraftBukkit end
 +
     public BeaconTileEntity() {
-       super(TileEntityType.field_200984_o);
+       super(TileEntityType.BEACON);
     }
 @@ -112,8 +_,8 @@
-       for(int i1 = 0; i1 < 10 && blockpos.func_177956_o() <= l; ++i1) {
-          BlockState blockstate = this.field_145850_b.func_180495_p(blockpos);
-          Block block = blockstate.func_177230_c();
+       for(int i1 = 0; i1 < 10 && blockpos.getY() <= l; ++i1) {
+          BlockState blockstate = this.level.getBlockState(blockpos);
+          Block block = blockstate.getBlock();
 -         if (block instanceof IBeaconBeamColorProvider) {
--            float[] afloat = ((IBeaconBeamColorProvider)block).func_196457_d().func_193349_f();
-+         float[] afloat = blockstate.getBeaconColorMultiplier(this.field_145850_b, blockpos, func_174877_v());
+-            float[] afloat = ((IBeaconBeamColorProvider)block).getColor().getTextureDiffuseColors();
++         float[] afloat = blockstate.getBeaconColorMultiplier(this.level, blockpos, getBlockPos());
 +         if (afloat != null) {
-             if (this.field_213934_g.size() <= 1) {
+             if (this.checkingBeamSections.size() <= 1) {
                 beacontileentity$beamsegment = new BeaconTileEntity.BeamSegment(afloat);
-                this.field_213934_g.add(beacontileentity$beamsegment);
+                this.checkingBeamSections.add(beacontileentity$beamsegment);
 @@ -203,30 +_,65 @@
-       super.func_145843_s();
+       super.setRemoved();
     }
  
 +   // CraftBukkit start - split into components
 +   private byte getAmplification() {
 +      byte b0 = 0;
-+      if (this.field_146012_l >= 4 && this.field_146013_m == this.field_146010_n) {
++      if (this.levels >= 4 && this.primaryPower == this.secondaryPower) {
 +         b0 = 1;
 +      }
 +      return b0;
 +   }
 +
 +   private int getLevelCB() {
-+      int i = (9 + this.field_146012_l * 2) * 20;
++      int i = (9 + this.levels * 2) * 20;
 +      return i;
 +   }
 +   // CraftBukkit end
 +
 +   public List getHumansInRange() {
-+      double d0 = this.field_146012_l * 10 + 10;
-+      AxisAlignedBB axisalignedbb = new AxisAlignedBB(this.field_174879_c).func_186662_g(d0).func_72321_a(0.0, this.field_145850_b.func_217301_I(), 0.0);
-+      List<PlayerEntity> list = this.field_145850_b.func_217357_a(PlayerEntity.class, axisalignedbb);
++      double d0 = this.levels * 10 + 10;
++      AxisAlignedBB axisalignedbb = new AxisAlignedBB(this.worldPosition).inflate(d0).expandTowards(0.0, this.level.getMaxBuildHeight(), 0.0);
++      List<PlayerEntity> list = this.level.getEntitiesOfClass(PlayerEntity.class, axisalignedbb);
 +      return list;
 +   }
 +
@@ -114,40 +114,40 @@
 +   }
 +
 +   private boolean hasSecondaryEffect() {
-+      if (this.field_146012_l >= 4 && this.field_146013_m != this.field_146010_n && this.field_146010_n != null) {
++      if (this.levels >= 4 && this.primaryPower != this.secondaryPower && this.secondaryPower != null) {
 +         return true;
 +      }
 +
 +      return false;
 +   }
 +
-    private void func_146000_x() {
-       if (!this.field_145850_b.field_72995_K && this.field_146013_m != null) {
-          double d0 = (double)(this.field_146012_l * 10 + 10);
+    private void applyEffects() {
+       if (!this.level.isClientSide && this.primaryPower != null) {
+          double d0 = (double)(this.levels * 10 + 10);
 -         int i = 0;
--         if (this.field_146012_l >= 4 && this.field_146013_m == this.field_146010_n) {
+-         if (this.levels >= 4 && this.primaryPower == this.secondaryPower) {
 -            i = 1;
 -         }
 +         byte b0 = getAmplification();
 +         int i = getLevelCB();
  
-          int j = (9 + this.field_146012_l * 2) * 20;
--         AxisAlignedBB axisalignedbb = (new AxisAlignedBB(this.field_174879_c)).func_186662_g(d0).func_72321_a(0.0D, (double)this.field_145850_b.func_217301_I(), 0.0D);
--         List<PlayerEntity> list = this.field_145850_b.func_217357_a(PlayerEntity.class, axisalignedbb);
+          int j = (9 + this.levels * 2) * 20;
+-         AxisAlignedBB axisalignedbb = (new AxisAlignedBB(this.worldPosition)).inflate(d0).expandTowards(0.0D, (double)this.level.getMaxBuildHeight(), 0.0D);
+-         List<PlayerEntity> list = this.level.getEntitiesOfClass(PlayerEntity.class, axisalignedbb);
 -
 -         for(PlayerEntity playerentity : list) {
--            playerentity.func_195064_c(new EffectInstance(this.field_146013_m, j, i, true, true));
+-            playerentity.addEffect(new EffectInstance(this.primaryPower, j, i, true, true));
 -         }
 -
--         if (this.field_146012_l >= 4 && this.field_146013_m != this.field_146010_n && this.field_146010_n != null) {
+-         if (this.levels >= 4 && this.primaryPower != this.secondaryPower && this.secondaryPower != null) {
 -            for(PlayerEntity playerentity1 : list) {
--               playerentity1.func_195064_c(new EffectInstance(this.field_146010_n, j, 0, true, true));
+-               playerentity1.addEffect(new EffectInstance(this.secondaryPower, j, 0, true, true));
 +         List<PlayerEntity> list = getHumansInRange();
 +
-+         applyEffect(list, this.field_146013_m, i, b0);
++         applyEffect(list, this.primaryPower, i, b0);
 +
 +         if (hasSecondaryEffect()) {
-+            applyEffect(list, this.field_146010_n, i, 0);
++            applyEffect(list, this.secondaryPower, i, 0);
              }
           }
  
@@ -155,19 +155,19 @@
 -   }
 +   // CraftBukkit end
  
-    public void func_205736_a(SoundEvent p_205736_1_) {
-       this.field_145850_b.func_184133_a((PlayerEntity)null, this.field_174879_c, p_205736_1_, SoundCategory.BLOCKS, 1.0F, 1.0F);
+    public void playSound(SoundEvent p_205736_1_) {
+       this.level.playSound((PlayerEntity)null, this.worldPosition, p_205736_1_, SoundCategory.BLOCKS, 1.0F, 1.0F);
 @@ -263,8 +_,11 @@
  
-    public void func_230337_a_(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-       super.func_230337_a_(p_230337_1_, p_230337_2_);
--      this.field_146013_m = func_184279_f(p_230337_2_.func_74762_e("Primary"));
--      this.field_146010_n = func_184279_f(p_230337_2_.func_74762_e("Secondary"));
+    public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
+       super.load(p_230337_1_, p_230337_2_);
+-      this.primaryPower = getValidEffectById(p_230337_2_.getInt("Primary"));
+-      this.secondaryPower = getValidEffectById(p_230337_2_.getInt("Secondary"));
 +      // CraftBukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
-+      this.field_146013_m = Effect.func_188412_a(p_230337_2_.func_74762_e("Primary"));
-+      this.field_146010_n = Effect.func_188412_a(p_230337_2_.func_74762_e("Secondary"));
-+      this.field_146012_l = p_230337_2_.func_74762_e("Levels"); // SPIGOT-5053, use where available
++      this.primaryPower = Effect.byId(p_230337_2_.getInt("Primary"));
++      this.secondaryPower = Effect.byId(p_230337_2_.getInt("Secondary"));
++      this.levels = p_230337_2_.getInt("Levels"); // SPIGOT-5053, use where available
 +      // CraftBukkit end
-       if (p_230337_2_.func_150297_b("CustomName", 8)) {
-          this.field_146008_p = ITextComponent.Serializer.func_240643_a_(p_230337_2_.func_74779_i("CustomName"));
+       if (p_230337_2_.contains("CustomName", 8)) {
+          this.name = ITextComponent.Serializer.fromJson(p_230337_2_.getString("CustomName"));
        }

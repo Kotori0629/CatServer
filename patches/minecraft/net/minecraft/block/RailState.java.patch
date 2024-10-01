@@ -1,57 +1,57 @@
 --- a/net/minecraft/block/RailState.java
 +++ b/net/minecraft/block/RailState.java
 @@ -15,16 +_,30 @@
-    private BlockState field_196923_d;
-    private final boolean field_208513_e;
-    private final List<BlockPos> field_196924_e = Lists.newArrayList();
+    private BlockState state;
+    private final boolean isStraight;
+    private final List<BlockPos> connections = Lists.newArrayList();
 +   private final boolean canMakeSlopes;
  
     public RailState(World p_i47755_1_, BlockPos p_i47755_2_, BlockState p_i47755_3_) {
-       this.field_196920_a = p_i47755_1_;
-       this.field_196921_b = p_i47755_2_;
-       this.field_196923_d = p_i47755_3_;
-       this.field_196922_c = (AbstractRailBlock)p_i47755_3_.func_177230_c();
--      RailShape railshape = p_i47755_3_.func_177229_b(this.field_196922_c.func_176560_l());
--      this.field_208513_e = this.field_196922_c.func_208490_b();
-+      RailShape railshape = this.field_196922_c.getRailDirection(field_196923_d, p_i47755_1_, p_i47755_2_, null);
-+      this.field_208513_e = !this.field_196922_c.isFlexibleRail(field_196923_d, p_i47755_1_, p_i47755_2_);
-+      this.canMakeSlopes = this.field_196922_c.canMakeSlopes(field_196923_d, p_i47755_1_, p_i47755_2_);
-       this.func_208509_a(railshape);
+       this.level = p_i47755_1_;
+       this.pos = p_i47755_2_;
+       this.state = p_i47755_3_;
+       this.block = (AbstractRailBlock)p_i47755_3_.getBlock();
+-      RailShape railshape = p_i47755_3_.getValue(this.block.getShapeProperty());
+-      this.isStraight = this.block.isStraight();
++      RailShape railshape = this.block.getRailDirection(state, p_i47755_1_, p_i47755_2_, null);
++      this.isStraight = !this.block.isFlexibleRail(state, p_i47755_1_, p_i47755_2_);
++      this.canMakeSlopes = this.block.canMakeSlopes(state, p_i47755_1_, p_i47755_2_);
+       this.updateConnections(railshape);
     }
 +
-+   public final World getWorld() { return this.field_196920_a; } // Paper - OBFHELPER
++   public final World getWorld() { return this.level; } // Paper - OBFHELPER
 +
-+   public final BlockPos getPos() { return this.field_196921_b; } // Paper - OBFHELPER
++   public final BlockPos getPos() { return this.pos; } // Paper - OBFHELPER
 +
-+   public final BlockState getRailState() { return this.field_196923_d; } // Paper - OBFHELPER
++   public final BlockState getRailState() { return this.state; } // Paper - OBFHELPER
 +
 +   // Paper start - prevent desync
 +   public boolean isValid() {
-+      return this.getWorld().func_180495_p(this.getPos()).func_177230_c() == this.getRailState().func_177230_c();
++      return this.getWorld().getBlockState(this.getPos()).getBlock() == this.getRailState().getBlock();
 +   }
 +    // Paper end - prevent desync
  
-    public List<BlockPos> func_196907_a() {
-       return this.field_196924_e;
+    public List<BlockPos> getConnections() {
+       return this.connections;
 @@ -142,6 +_,11 @@
     }
  
-    private void func_208510_c(RailState p_208510_1_) {
+    private void connectTo(RailState p_208510_1_) {
 +      // Paper start - prevent desync
 +      if (!this.isValid() || !p_208510_1_.isValid()) {
 +         return;
 +      }
 +      // Paper end - prevent desync
-       this.field_196924_e.add(p_208510_1_.field_196921_b);
-       BlockPos blockpos = this.field_196921_b.func_177978_c();
-       BlockPos blockpos1 = this.field_196921_b.func_177968_d();
+       this.connections.add(p_208510_1_.pos);
+       BlockPos blockpos = this.pos.north();
+       BlockPos blockpos1 = this.pos.south();
 @@ -178,7 +_,7 @@
           }
        }
  
 -      if (railshape == RailShape.NORTH_SOUTH) {
 +      if (railshape == RailShape.NORTH_SOUTH && canMakeSlopes) {
-          if (AbstractRailBlock.func_208488_a(this.field_196920_a, blockpos.func_177984_a())) {
+          if (AbstractRailBlock.isRail(this.level, blockpos.above())) {
              railshape = RailShape.ASCENDING_NORTH;
           }
 @@ -188,7 +_,7 @@
@@ -60,7 +60,7 @@
  
 -      if (railshape == RailShape.EAST_WEST) {
 +      if (railshape == RailShape.EAST_WEST && canMakeSlopes) {
-          if (AbstractRailBlock.func_208488_a(this.field_196920_a, blockpos3.func_177984_a())) {
+          if (AbstractRailBlock.isRail(this.level, blockpos3.above())) {
              railshape = RailShape.ASCENDING_EAST;
           }
 @@ -304,7 +_,7 @@
@@ -69,7 +69,7 @@
  
 -      if (railshape == RailShape.NORTH_SOUTH) {
 +      if (railshape == RailShape.NORTH_SOUTH && canMakeSlopes) {
-          if (AbstractRailBlock.func_208488_a(this.field_196920_a, blockpos.func_177984_a())) {
+          if (AbstractRailBlock.isRail(this.level, blockpos.above())) {
              railshape = RailShape.ASCENDING_NORTH;
           }
 @@ -314,7 +_,7 @@
@@ -78,31 +78,31 @@
  
 -      if (railshape == RailShape.EAST_WEST) {
 +      if (railshape == RailShape.EAST_WEST && canMakeSlopes) {
-          if (AbstractRailBlock.func_208488_a(this.field_196920_a, blockpos3.func_177984_a())) {
+          if (AbstractRailBlock.isRail(this.level, blockpos3.above())) {
              railshape = RailShape.ASCENDING_EAST;
           }
 @@ -332,10 +_,14 @@
-       this.field_196923_d = this.field_196923_d.func_206870_a(this.field_196922_c.func_176560_l(), railshape);
-       if (p_226941_2_ || this.field_196920_a.func_180495_p(this.field_196921_b) != this.field_196923_d) {
-          this.field_196920_a.func_180501_a(this.field_196921_b, this.field_196923_d, 3);
+       this.state = this.state.setValue(this.block.getShapeProperty(), railshape);
+       if (p_226941_2_ || this.level.getBlockState(this.pos) != this.state) {
+          this.level.setBlock(this.pos, this.state, 3);
 -
 +         // Paper start - prevent desync
 +         if (!this.isValid()) {
 +            return this;
 +         }
 +         // Paper end - prevent desync
-          for(int i = 0; i < this.field_196924_e.size(); ++i) {
-             RailState railstate = this.func_196908_a(this.field_196924_e.get(i));
+          for(int i = 0; i < this.connections.size(); ++i) {
+             RailState railstate = this.getRail(this.connections.get(i));
 -            if (railstate != null) {
 +            if (railstate != null && railstate.isValid()) { // Paper - prevent desync
-                railstate.func_196903_f();
-                if (railstate.func_196905_c(this)) {
-                   railstate.func_208510_c(this);
+                railstate.removeSoftConnections();
+                if (railstate.canConnectTo(this)) {
+                   railstate.connectTo(this);
 @@ -348,6 +_,6 @@
     }
  
-    public BlockState func_196916_c() {
--      return this.field_196923_d;
-+      return this.getWorld().func_180495_p(this.getPos()); // Paper - prevent desync
+    public BlockState getState() {
+-      return this.state;
++      return this.getWorld().getBlockState(this.getPos()); // Paper - prevent desync
     }
  }

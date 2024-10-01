@@ -18,37 +18,37 @@
 +import org.bukkit.event.player.PlayerTeleportEvent;
  
  public class EndGatewayTileEntity extends EndPortalTileEntity implements ITickableTileEntity {
-    private static final Logger field_195503_a = LogManager.getLogger();
--   private long field_195504_f;
-+   public long field_195504_f;
-    private int field_195505_g;
+    private static final Logger LOGGER = LogManager.getLogger();
+-   private long age;
++   public long age;
+    private int teleportCooldown;
     @Nullable
--   private BlockPos field_195506_h;
--   private boolean field_195507_i;
-+   public BlockPos field_195506_h;
-+   public boolean field_195507_i;
+-   private BlockPos exitPortal;
+-   private boolean exactTeleport;
++   public BlockPos exitPortal;
++   public boolean exactTeleport;
  
     public EndGatewayTileEntity() {
-       super(TileEntityType.field_200991_v);
+       super(TileEntityType.END_GATEWAY);
 @@ -148,7 +_,7 @@
-    public void func_195496_a(Entity p_195496_1_) {
-       if (this.field_145850_b instanceof ServerWorld && !this.func_195500_d()) {
-          this.field_195505_g = 100;
--         if (this.field_195506_h == null && this.field_145850_b.func_234923_W_() == World.field_234920_i_) {
-+         if (this.field_195506_h == null && this.field_145850_b.getTypeKey() == DimensionType.field_236001_e_) { // CraftBukkit - work in alternate worlds
-             this.func_227015_a_((ServerWorld)this.field_145850_b);
+    public void teleportEntity(Entity p_195496_1_) {
+       if (this.level instanceof ServerWorld && !this.isCoolingDown()) {
+          this.teleportCooldown = 100;
+-         if (this.exitPortal == null && this.level.dimension() == World.END) {
++         if (this.exitPortal == null && this.level.getTypeKey() == DimensionType.END_LOCATION) { // CraftBukkit - work in alternate worlds
+             this.findExitPortal((ServerWorld)this.level);
           }
  
 @@ -170,6 +_,24 @@
              } else {
-                entity = p_195496_1_.func_184208_bv();
+                entity = p_195496_1_.getRootVehicle();
              }
 +
 +
 +            // CraftBukkit start - Fire PlayerTeleportEvent
 +            if (p_195496_1_ instanceof ServerPlayerEntity) {
 +               org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer player = (CraftPlayer) p_195496_1_.getBukkitEntity();
-+               org.bukkit.Location location = new Location(field_145850_b.getWorld(), (double) blockpos.func_177958_n() + 0.5D, (double) blockpos.func_177956_o() + 0.5D, (double) blockpos.func_177952_p() + 0.5D);
++               org.bukkit.Location location = new Location(level.getWorld(), (double) blockpos.getX() + 0.5D, (double) blockpos.getY() + 0.5D, (double) blockpos.getZ() + 0.5D);
 +               location.setPitch(player.getLocation().getPitch());
 +               location.setYaw(player.getLocation().getYaw());
 +               PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY);
@@ -56,11 +56,11 @@
 +               if (teleEvent.isCancelled()) {
 +                  return;
 +               }
-+               ((ServerPlayerEntity) p_195496_1_).field_71135_a.teleport(teleEvent.getTo());
-+               this.func_195500_d(); // CraftBukkit - call at end of method
++               ((ServerPlayerEntity) p_195496_1_).connection.teleport(teleEvent.getTo());
++               this.isCoolingDown(); // CraftBukkit - call at end of method
 +               return;
 +            }
 +            // CraftBukkit end
  
-             entity.func_242279_ag();
-             entity.func_223102_j((double)blockpos.func_177958_n() + 0.5D, (double)blockpos.func_177956_o(), (double)blockpos.func_177952_p() + 0.5D);
+             entity.setPortalCooldown();
+             entity.teleportToWithTicket((double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D);

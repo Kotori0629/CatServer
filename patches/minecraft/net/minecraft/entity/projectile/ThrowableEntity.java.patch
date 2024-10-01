@@ -4,10 +4,10 @@
           }
        }
  
--      if (raytraceresult.func_216346_c() != RayTraceResult.Type.MISS && !flag) {
--         this.func_70227_a(raytraceresult);
-+      if (raytraceresult.func_216346_c() != RayTraceResult.Type.MISS && !flag && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
+-      if (raytraceresult.getType() != RayTraceResult.Type.MISS && !flag) {
+-         this.onHit(raytraceresult);
++      if (raytraceresult.getType() != RayTraceResult.Type.MISS && !flag && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
 +         this.preOnHit(raytraceresult);
        }
  
-       this.func_145775_I();
+       this.checkInsideBlocks();

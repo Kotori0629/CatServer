@@ -12,17 +12,17 @@
 @@ -42,6 +_,7 @@
     }
  
-    public static void func_196298_a(World p_196298_0_, BlockPos p_196298_1_, SkullTileEntity p_196298_2_) {
+    public static void checkSpawn(World p_196298_0_, BlockPos p_196298_1_, SkullTileEntity p_196298_2_) {
 +      if (p_196298_0_.captureBlockStates) return; // CraftBukkit
-       if (!p_196298_0_.field_72995_K) {
-          BlockState blockstate = p_196298_2_.func_195044_w();
-          boolean flag = blockstate.func_203425_a(Blocks.field_196705_eO) || blockstate.func_203425_a(Blocks.field_196704_eN);
+       if (!p_196298_0_.isClientSide) {
+          BlockState blockstate = p_196298_2_.getBlockState();
+          boolean flag = blockstate.is(Blocks.WITHER_SKELETON_SKULL) || blockstate.is(Blocks.WITHER_SKELETON_WALL_SKULL);
 @@ -67,7 +_,7 @@
-                   CriteriaTriggers.field_192133_m.func_192229_a(serverplayerentity, witherentity);
+                   CriteriaTriggers.SUMMONED_ENTITY.trigger(serverplayerentity, witherentity);
                 }
  
--               p_196298_0_.func_217376_c(witherentity);
+-               p_196298_0_.addFreshEntity(witherentity);
 +               p_196298_0_.addEntity(witherentity, SpawnReason.BUILD_WITHER);
  
-                for(int k = 0; k < blockpattern.func_177684_c(); ++k) {
-                   for(int l = 0; l < blockpattern.func_177685_b(); ++l) {
+                for(int k = 0; k < blockpattern.getWidth(); ++k) {
+                   for(int l = 0; l < blockpattern.getHeight(); ++l) {

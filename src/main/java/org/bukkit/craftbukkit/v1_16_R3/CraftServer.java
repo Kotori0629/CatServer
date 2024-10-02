@@ -1863,7 +1863,11 @@ public final class CraftServer implements Server {
     @NotNull
     @Override
     public double[] getTPS() {
-        return MinecraftServer.getServer().recentTps;
+        return new double[] {
+                net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
+                net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
+                net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
+        };
     }
 
     @Override

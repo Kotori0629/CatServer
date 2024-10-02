@@ -56,24 +56,56 @@ import net.minecraft.util.registry.SimpleRegistry;
 import net.minecraft.util.registry.WorldSettingsImport;
 import net.minecraft.village.VillageSiege;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.*;
+import net.minecraft.world.Dimension;
+import net.minecraft.world.DimensionType;
+import net.minecraft.world.GameRules;
+import net.minecraft.world.GameType;
+import net.minecraft.world.WorldSettings;
 import net.minecraft.world.biome.BiomeManager;
 import net.minecraft.world.gen.settings.DimensionGeneratorSettings;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.server.TicketType;
-import net.minecraft.world.spawner.*;
-import net.minecraft.world.storage.*;
+import net.minecraft.world.spawner.CatSpawner;
+import net.minecraft.world.spawner.ISpecialSpawner;
+import net.minecraft.world.spawner.PatrolSpawner;
+import net.minecraft.world.spawner.PhantomSpawner;
+import net.minecraft.world.spawner.WanderingTraderSpawner;
+import net.minecraft.world.storage.MapData;
+import net.minecraft.world.storage.MapDecoration;
+import net.minecraft.world.storage.PlayerData;
+import net.minecraft.world.storage.SaveFormat;
+import net.minecraft.world.storage.ServerWorldInfo;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.Validate;
-import org.bukkit.*;
-import org.bukkit.World;
+import org.bukkit.BanList;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Keyed;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Server;
+import org.bukkit.StructureType;
+import org.bukkit.UnsafeValues;
 import org.bukkit.Warning.WarningState;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
+import org.bukkit.WorldCreator;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.boss.*;
-import org.bukkit.command.*;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.boss.KeyedBossBar;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandException;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -87,7 +119,19 @@ import org.bukkit.craftbukkit.v1_16_R3.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_16_R3.generator.CraftChunkData;
 import org.bukkit.craftbukkit.v1_16_R3.help.SimpleHelpMap;
-import org.bukkit.craftbukkit.v1_16_R3.inventory.*;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftBlastingRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftCampfireRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftFurnaceRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftMerchantCustom;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftShapedRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftShapelessRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftSmithingRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftSmokingRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.CraftStonecuttingRecipe;
+import org.bukkit.craftbukkit.v1_16_R3.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.v1_16_R3.inventory.util.CraftInventoryCreator;
 import org.bukkit.craftbukkit.v1_16_R3.map.CraftMapView;
 import org.bukkit.craftbukkit.v1_16_R3.metadata.EntityMetadataStore;
@@ -99,7 +143,12 @@ import org.bukkit.craftbukkit.v1_16_R3.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.v1_16_R3.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.v1_16_R3.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.v1_16_R3.tag.CraftItemTag;
-import org.bukkit.craftbukkit.v1_16_R3.util.*;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftIconCache;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_16_R3.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_16_R3.util.DatFileFilter;
+import org.bukkit.craftbukkit.v1_16_R3.util.Versioning;
 import org.bukkit.craftbukkit.v1_16_R3.util.permissions.CraftDefaultPermissions;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -108,16 +157,33 @@ import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.server.TabCompleteEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.help.HelpMap;
-import org.bukkit.inventory.*;
+import org.bukkit.inventory.BlastingRecipe;
+import org.bukkit.inventory.CampfireRecipe;
+import org.bukkit.inventory.ComplexRecipe;
+import org.bukkit.inventory.FurnaceRecipe;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.SmithingRecipe;
+import org.bukkit.inventory.SmokingRecipe;
+import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
-import org.bukkit.plugin.*;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginLoadOrder;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
+import org.bukkit.plugin.SimplePluginManager;
+import org.bukkit.plugin.SimpleServicesManager;
 import org.bukkit.plugin.java.JavaPluginLoader;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.StandardMessenger;
@@ -132,11 +198,29 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1860,10 +1944,42 @@ public final class CraftServer implements Server {
         return null;
     }
 
+    // CatServer start
+    @Override
+    public double getAverageTickTime1m() {
+        return net.minecraft.server.MinecraftServer.getServer().tickTimes60s.getAverage();
+    }
+
+    @Override
+    public double getAverageTickTime10s() {
+        return net.minecraft.server.MinecraftServer.getServer().tickTimes10s.getAverage();
+    }
+
+    @Override
+    public double getAverageTickTime5s() {
+        return net.minecraft.server.MinecraftServer.getServer().tickTimes5s.getAverage();
+    }
+
+    @Override
+    public long[] getTickTimes() {
+        return net.minecraft.server.MinecraftServer.getServer().tickTimes5s.getTimes();
+    }
+
+    @Override
+    public double[] getTickTime() {
+        return new double[] {
+                getAverageTickTime5s(),
+                getAverageTickTime10s(),
+                getAverageTickTime1m()
+        };
+    }
+    // CatServer end
+
     @NotNull
     @Override
     public double[] getTPS() {
         return new double[] {
+                net.minecraft.server.MinecraftServer.getServer().tps5s.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
                 net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()

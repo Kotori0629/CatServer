@@ -1201,6 +1201,20 @@ public interface Server extends PluginMessageRecipient {
     @NotNull
     public double[] getTPS();
     // Paper end
+    @NotNull
+    public long [] getTickTimes();
+
+    @NotNull
+    public double[] getTickTime();
+
+    @NotNull
+    public double getAverageTickTime5s();
+
+    @NotNull
+    public double getAverageTickTime10s();
+
+    @NotNull
+    public double getAverageTickTime1m();
 
     /**
      * Get the advancement specified by this key.

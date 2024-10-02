@@ -1,77 +1,54 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1,18 +_,5 @@
- package net.minecraft.server;
- 
--import com.google.common.base.Splitter;
--import com.google.common.collect.ImmutableList;
--import com.google.common.collect.Lists;
--import com.google.common.collect.Maps;
--import com.google.common.collect.Sets;
--import com.mojang.authlib.GameProfile;
--import com.mojang.authlib.GameProfileRepository;
--import com.mojang.authlib.minecraft.MinecraftSessionService;
--import com.mojang.datafixers.DataFixer;
--import io.netty.buffer.ByteBuf;
--import io.netty.buffer.ByteBufOutputStream;
--import io.netty.buffer.Unpooled;
--import it.unimi.dsi.fastutil.longs.LongIterator;
- import java.awt.image.BufferedImage;
- import java.io.File;
- import java.io.IOException;
-@@ -37,19 +_,54 @@
- import java.util.Date;
- import java.util.List;
- import java.util.Map;
-+import java.util.Map.Entry;
- import java.util.Objects;
- import java.util.Optional;
- import java.util.Random;
- import java.util.Set;
- import java.util.UUID;
--import java.util.Map.Entry;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.Executor;
- import java.util.concurrent.atomic.AtomicReference;
-+import java.util.concurrent.locks.LockSupport;
- import java.util.function.BooleanSupplier;
- import java.util.function.Function;
-+
- import javax.annotation.Nullable;
- import javax.imageio.ImageIO;
-+
+@@ -9,47 +_,14 @@
+ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+ import com.mojang.datafixers.DataFixer;
 +import com.mojang.serialization.Lifecycle;
-+import net.minecraft.world.storage.*;
-+import org.apache.commons.lang3.Validate;
-+import org.apache.logging.log4j.LogManager;
-+import org.apache.logging.log4j.Logger;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
-+import org.bukkit.craftbukkit.v1_16_R3.SpigotTimings;
-+import org.bukkit.event.server.ServerLoadEvent;
-+import org.bukkit.event.world.WorldInitEvent;
-+import org.bukkit.event.world.WorldLoadEvent;
-+import org.spigotmc.CustomTimingsHandler;
-+import org.spigotmc.SlackActivityAccountant;
-+
-+import com.google.common.base.Splitter;
-+import com.google.common.collect.ImmutableList;
-+import com.google.common.collect.Lists;
-+import com.google.common.collect.Maps;
-+import com.google.common.collect.Sets;
-+
-+import moe.loliserver.BukkitInjector;
-+import com.mojang.authlib.GameProfile;
-+import com.mojang.authlib.GameProfileRepository;
-+import com.mojang.authlib.minecraft.MinecraftSessionService;
-+import com.mojang.datafixers.DataFixer;
-+
-+import io.netty.buffer.ByteBuf;
-+import io.netty.buffer.ByteBufOutputStream;
-+import io.netty.buffer.Unpooled;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
 +import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
-+import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
+-import java.awt.image.BufferedImage;
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.UnsupportedEncodingException;
+-import java.io.Writer;
+-import java.lang.management.ManagementFactory;
+-import java.lang.management.ThreadInfo;
+-import java.lang.management.ThreadMXBean;
+-import java.net.Proxy;
+-import java.net.URLEncoder;
+-import java.nio.ByteBuffer;
+-import java.nio.charset.StandardCharsets;
+-import java.nio.file.Files;
+-import java.nio.file.Path;
+-import java.security.KeyPair;
+-import java.text.SimpleDateFormat;
+-import java.util.Arrays;
+-import java.util.Base64;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.Comparator;
+-import java.util.Date;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Objects;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
+-import java.util.Map.Entry;
+-import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.Executor;
+-import java.util.concurrent.atomic.AtomicReference;
+-import java.util.function.BooleanSupplier;
+-import java.util.function.Function;
+-import javax.annotation.Nullable;
+-import javax.imageio.ImageIO;
 +import joptsimple.OptionSet;
++import moe.loliserver.BukkitInjector;
  import net.minecraft.advancements.AdvancementManager;
  import net.minecraft.advancements.FunctionManager;
  import net.minecraft.block.Block;
@@ -83,26 +60,65 @@
  import net.minecraft.server.management.OpEntry;
  import net.minecraft.server.management.PlayerList;
  import net.minecraft.server.management.PlayerProfileCache;
-@@ -140,41 +_,29 @@
- import net.minecraft.world.spawner.PatrolSpawner;
- import net.minecraft.world.spawner.PhantomSpawner;
- import net.minecraft.world.spawner.WanderingTraderSpawner;
--import net.minecraft.world.storage.CommandStorage;
--import net.minecraft.world.storage.DerivedWorldInfo;
--import net.minecraft.world.storage.DimensionSavedDataManager;
--import net.minecraft.world.storage.FolderName;
--import net.minecraft.world.storage.IServerConfiguration;
--import net.minecraft.world.storage.IServerWorldInfo;
--import net.minecraft.world.storage.IWorldInfo;
--import net.minecraft.world.storage.PlayerData;
--import net.minecraft.world.storage.SaveFormat;
--import net.minecraft.world.storage.WorldSavedDataCallableSave;
+@@ -149,32 +_,81 @@
+ import net.minecraft.world.storage.IWorldInfo;
+ import net.minecraft.world.storage.PlayerData;
+ import net.minecraft.world.storage.SaveFormat;
++import net.minecraft.world.storage.ServerWorldInfo;
+ import net.minecraft.world.storage.WorldSavedDataCallableSave;
  import net.minecraftforge.api.distmarker.Dist;
  import net.minecraftforge.api.distmarker.OnlyIn;
--import org.apache.commons.lang3.Validate;
--import org.apache.logging.log4j.LogManager;
--import org.apache.logging.log4j.Logger;
 +import net.minecraftforge.common.MinecraftForge;
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.v1_16_R3.CraftServer;
++import org.bukkit.craftbukkit.v1_16_R3.SpigotTimings;
++import org.bukkit.event.server.ServerLoadEvent;
++import org.bukkit.event.world.WorldInitEvent;
++import org.bukkit.event.world.WorldLoadEvent;
++import org.spigotmc.CustomTimingsHandler;
++import org.spigotmc.SlackActivityAccountant;
++
++import javax.annotation.Nullable;
++import javax.imageio.ImageIO;
++import java.awt.image.BufferedImage;
++import java.io.File;
++import java.io.IOException;
++import java.io.UnsupportedEncodingException;
++import java.io.Writer;
++import java.lang.management.ManagementFactory;
++import java.lang.management.ThreadInfo;
++import java.lang.management.ThreadMXBean;
++import java.net.Proxy;
++import java.net.URLEncoder;
++import java.nio.ByteBuffer;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.security.KeyPair;
++import java.text.SimpleDateFormat;
++import java.util.Arrays;
++import java.util.Base64;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.Comparator;
++import java.util.Date;
++import java.util.List;
++import java.util.Map;
++import java.util.Map.Entry;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Random;
++import java.util.Set;
++import java.util.UUID;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.Executor;
++import java.util.concurrent.atomic.AtomicReference;
++import java.util.concurrent.locks.LockSupport;
++import java.util.function.BooleanSupplier;
++import java.util.function.Function;
  
  public abstract class MinecraftServer extends RecursiveEventLoop<TickDelayedTask> implements ISnooperInfo, ICommandSource, AutoCloseable {
 -   private static final Logger LOGGER = LogManager.getLogger();
@@ -143,7 +159,7 @@
     protected long nextTickTime = Util.getMillis();
     private long delayedTasksMaxNextTickTime;
     private boolean mayHaveDelayedTasks;
-@@ -219,16 +_,91 @@
+@@ -219,16 +_,123 @@
     private final FrameTimer frameTimer = new FrameTimer();
     private boolean enforceWhitelist;
     private float averageTickTime;
@@ -177,7 +193,7 @@
 +   public static final int TPS = 20;
 +   public static final int TICK_TIME = 1000000000 / TPS;
 +   private static final int SAMPLE_INTERVAL = 20; // Paper
-+   public final double[] recentTps = new double[ 3 ];
++   public final double[] recentTps = new double[ 4 ];
 +   public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
 +   // Spigot end
 +
@@ -186,9 +202,41 @@
 +   private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
 +   private long lastTick = 0;
 +   private long catchupTime = 0;
++
++   // CatServer start
++   public final TickTimes tickTimes5s = new TickTimes(100);
++   public final TickTimes tickTimes10s = new TickTimes(200);
++   public final TickTimes tickTimes60s = new TickTimes(1200);
++   // CatServer end
++
++   public final RollingAverage tps5s = new RollingAverage(5);
 +   public final RollingAverage tps1 = new RollingAverage(60);
 +   public final RollingAverage tps5 = new RollingAverage(60 * 5);
 +   public final RollingAverage tps15 = new RollingAverage(60 * 15);
++
++   public static class TickTimes {
++      private final long[] times;
++
++      public TickTimes(int length) {
++         times = new long[length];
++      }
++
++      public void add(int index, long time) {
++         times[index % times.length] = time;
++      }
++
++      public long[] getTimes() {
++         return times.clone();
++      }
++
++      public double getAverage() {
++         long total = 0L;
++         for (long value : times) {
++            total += value;
++         }
++         return ((double) total / (double) times.length) * 1.0E-6D;
++      }
++   }
 +
 +   public static class RollingAverage {
 +      private final int size;
@@ -467,7 +515,7 @@
  
     }
  
-@@ -611,23 +_,56 @@
+@@ -611,23 +_,57 @@
  
     }
  
@@ -515,9 +563,10 @@
 +                  tps5.add(currentTps, diff);
 +                  tps15.add(currentTps, diff);
 +                  // Backwards compat with bad plugins
-+                  recentTps[0] = tps1.getAverage();
-+                  recentTps[1] = tps5.getAverage();
-+                  recentTps[2] = tps15.getAverage();
++                  recentTps[0] = tps5s.getAverage();
++                  recentTps[1] = tps1.getAverage();
++                  recentTps[2] = tps5.getAverage();
++                  recentTps[3] = tps15.getAverage();
 +                  // Paper end
 +                  tickSection = curTime;
 +               }
@@ -661,7 +710,15 @@
           this.snooper.prepare();
        }
  
-@@ -812,52 +_,119 @@
+@@ -809,55 +_,127 @@
+       this.profiler.push("tallying");
+       long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
+       this.averageTickTime = this.averageTickTime * 0.8F + (float)l / 1000000.0F * 0.19999999F;
++      // CatServer start
++      tickTimes5s.add(this.tickCount, l);
++      tickTimes10s.add(this.tickCount, l);
++      tickTimes60s.add(this.tickCount, l);
++      // CatServer end
        long i1 = Util.getNanos();
        this.frameTimer.logFrameDuration(i1 - i);
        this.profiler.pop();

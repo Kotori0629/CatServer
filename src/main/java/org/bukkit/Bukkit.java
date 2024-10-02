@@ -1435,6 +1435,31 @@ public final class Bukkit {
     }
     // Paper end
 
+    // CatServer start
+    public static long @NotNull [] getTickTimes() {
+        return server.getTickTimes();
+    }
+
+    public static double @NotNull [] getTickTime() {
+        return server.getTickTime();
+    }
+
+    @NotNull
+    public static double getAverageTickTime5s() {
+        return server.getAverageTickTime5s();
+    }
+
+    @NotNull
+    public static double getAverageTickTime10s() {
+        return server.getAverageTickTime10s();
+    }
+
+    @NotNull
+    public static double getAverageTickTime1m() {
+        return server.getAverageTickTime1m();
+    }
+    // CatServer end
+
     /**
      * Get the advancement specified by this key.
      *

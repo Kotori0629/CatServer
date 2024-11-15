@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -145,1399 +_,1814 @@
+@@ -145,1399 +_,1812 @@
  import net.minecraft.world.phys.shapes.Shapes;
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.ticks.LevelTicks;
@@ -223,7 +223,6 @@
 +        this.f_143245_ = new SleepStatus();
 +        this.initCapabilities();
 +
-+        m_6857_().world = this;
 +        this.world = new CraftWorld(this, generator, biomeProvider, environment);
 +        this.getCraftServer().addWorld(this.world);
 +        this.worldDataServer.setWorld(this);
@@ -286,7 +285,6 @@
 +        this.f_143245_ = new SleepStatus();
 +        this.initCapabilities();
 +
-+        m_6857_().world = this;
 +        this.world = new CraftWorld(this, generator, biomeProvider, environment);
 +        this.getCraftServer().addWorld(this.world);
 +        this.worldDataServer.setWorld(this);

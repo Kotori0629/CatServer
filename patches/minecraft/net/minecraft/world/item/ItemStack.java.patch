@@ -1,20 +1,46 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -72,7 +_,18 @@
+@@ -9,18 +_,6 @@
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+-import java.text.DecimalFormat;
+-import java.text.DecimalFormatSymbols;
+-import java.util.Collection;
+-import java.util.List;
+-import java.util.Locale;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.Map.Entry;
+-import java.util.function.Consumer;
+-import java.util.stream.Collectors;
+-import java.util.stream.Stream;
+-import javax.annotation.Nullable;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.Util;
+ import net.minecraft.advancements.CriteriaTriggers;
+@@ -70,9 +_,25 @@
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.pattern.BlockInWorld;
++import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
++import org.bukkit.event.player.PlayerItemDamageEvent;
  import org.slf4j.Logger;
  
 -public final class ItemStack {
-+import org.bukkit.Location;
-+import org.bukkit.SoundCategory;
-+import org.bukkit.TreeType;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlock;
-+import org.bukkit.craftbukkit.v1_18_R2.block.CraftBlockState;
-+import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.v1_18_R2.util.CraftMagicNumbers;
-+import org.bukkit.event.block.BlockFertilizeEvent;
-+import org.bukkit.event.player.PlayerItemDamageEvent;
-+import org.bukkit.event.world.StructureGrowEvent;
++import javax.annotation.Nullable;
++import java.text.DecimalFormat;
++import java.text.DecimalFormatSymbols;
++import java.util.Collection;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map.Entry;
++import java.util.Optional;
++import java.util.Random;
++import java.util.function.Consumer;
++import java.util.stream.Collectors;
++import java.util.stream.Stream;
 +
 +public final class ItemStack extends net.minecraftforge.common.capabilities.CapabilityProvider<ItemStack> implements net.minecraftforge.common.extensions.IForgeItemStack {
     public static final Codec<ItemStack> f_41582_ = RecordCodecBuilder.create((p_41697_) -> {
@@ -322,6 +348,27 @@
     }
  
     public void m_41654_(ItemStack.TooltipPart p_41655_) {
+@@ -807,7 +_,20 @@
+       }
+    }
+ 
++   // CatServer start - from Ketting 1.20
++   public boolean blockEnchant = false;
++
++   public void blockEnchant() {
++      this.blockEnchant = true;
++   }
++
+    public void m_41663_(Enchantment p_41664_, int p_41665_) {
++      if (blockEnchant) {
++         this.blockEnchant = false;
++         return;
++      }
++      // CatServer end
++
+       this.m_41784_();
+       if (!this.f_41590_.m_128425_("Enchantments", 9)) {
+          this.f_41590_.m_128365_("Enchantments", new ListTag());
 @@ -852,9 +_,23 @@
     }
  
